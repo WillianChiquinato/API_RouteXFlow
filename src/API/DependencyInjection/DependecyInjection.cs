@@ -1,4 +1,3 @@
-using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace API_RouteXFlow.DependencyInjection
@@ -7,20 +6,20 @@ namespace API_RouteXFlow.DependencyInjection
     {
         public static IServiceCollection AddProjectDependencies(this IServiceCollection services)
         {
-            var assembly = Assembly.GetExecutingAssembly();
-
-            // Services
             services.Scan(scan => scan
-                .FromAssemblies(assembly)
-                .AddClasses(c => c.Where(t => t.Name.EndsWith("Service")))
+                .FromApplicationDependencies()
+                .AddClasses(c => c.Where(t =>
+                    t.Namespace?.StartsWith("API_RouteXFlow", StringComparison.Ordinal) == true &&
+                    t.Name.EndsWith("Service", StringComparison.Ordinal)))
                 .AsImplementedInterfaces()
                 .WithScopedLifetime()
             );
 
-            // Repositories
             services.Scan(scan => scan
-                .FromAssemblies(assembly)
-                .AddClasses(c => c.Where(t => t.Name.EndsWith("Repository")))
+                .FromApplicationDependencies()
+                .AddClasses(c => c.Where(t =>
+                    t.Namespace?.StartsWith("API_RouteXFlow", StringComparison.Ordinal) == true &&
+                    t.Name.EndsWith("Repository", StringComparison.Ordinal)))
                 .AsImplementedInterfaces()
                 .WithScopedLifetime()
             );

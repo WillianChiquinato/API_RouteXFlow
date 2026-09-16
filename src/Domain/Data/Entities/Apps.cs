@@ -3,6 +3,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace API_RouteXFlow.Domain.Data.Entities;
 
+public enum TypeApps
+{
+    Delivery = 1,
+    MarketPlace = 2
+}
+
 [Table("apps")]
 public class Apps : BaseEntity
 {
@@ -14,4 +20,7 @@ public class Apps : BaseEntity
 
     [Column("icon_url")]
     public string? IconUrl { get; set; }
+
+    [Column("type_app")]
+    public TypeApps TypeApps { get; set; }
 }

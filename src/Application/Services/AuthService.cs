@@ -1,3 +1,4 @@
+using API_RouteXFlow.Domain.Data.Entities;
 using API_RouteXFlow.Interfaces.Repository;
 using API_RouteXFlow.Interfaces.Services;
 using API_RouteXFlow.Responses;
@@ -19,7 +20,7 @@ public class AuthService : IAuthService
     {
         try
         {
-            var user = await _userRepository.GetUserByLoginAsync(request.Username, request.Password);
+            var user = await _userRepository.GetUserByLoginAsync(request.Email, request.Password);
 
             if (user == null)
             {
@@ -42,13 +43,36 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<bool> ValidateTokenAsync(string token)
+    public async Task<CustomResponse<string>> RefreshAsync(string token)
     {
-        return true;
+        if (string.IsNullOrWhiteSpace(token))
+            return CustomResponse<string>.Fail("Token não informado.");
+
+        var user = _tokenService.GetUserFromToken(token, validateLifetime: false);
+        if (user == null)
+            return CustomResponse<string>.Fail("Token inválido.");
+
+        var refreshedToken = await _tokenService.GenerateTokenAsync(user);
+        return CustomResponse<string>.SuccessTrade(refreshedToken);
     }
 
-    public async Task LogoutAsync()
+    public async Task<CustomResponse<User>> SearchUserByIdAsync(int userId)
     {
-        // Implement your logout logic here, e.g., invalidate the token, clear cookies, etc.
+        try
+        {
+            var user = await _userRepository.GetUserByIdAsync(userId);
+
+            if (user == null)
+            {
+                return CustomResponse<User>.Fail("Usuário nao identificado.");
+            }
+            
+            return CustomResponse<User>.SuccessTrade(user);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
     }
 }

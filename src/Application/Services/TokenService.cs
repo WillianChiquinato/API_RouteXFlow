@@ -28,7 +28,7 @@ public class TokenService
         };
 
         var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(GetRequiredSetting("Jwt:Key"))
+            Encoding.UTF8.GetBytes(GetJwtSecret())
         );
 
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -37,9 +37,7 @@ public class TokenService
             issuer: _config["Jwt:Issuer"],
             audience: _config["Jwt:Audience"],
             claims: claims,
-            expires: DateTime.Now.AddMinutes(
-                Convert.ToDouble(_config["Jwt:ExpireMinutes"])
-            ),
+            expires: DateTime.UtcNow.AddMinutes(GetExpireMinutes()),
             signingCredentials: creds
         );
 
@@ -49,7 +47,7 @@ public class TokenService
     public void AppendAuthCookie(HttpResponse response, string token, bool isHttps)
     {
         var expiresAt = DateTimeOffset.UtcNow.AddMinutes(
-            Convert.ToDouble(_config["Jwt:ExpireMinutes"])
+            GetExpireMinutes()
         );
 
         response.Cookies.Append(AuthCookieName, token, new CookieOptions
@@ -107,28 +105,33 @@ public class TokenService
         });
     }
 
-    public int? ValidateToken(string token)
+    public UserComposeDTO? GetUserFromToken(string token, bool validateLifetime = true)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.UTF8.GetBytes(GetRequiredSetting("Jwt:Key"));
+        var key = Encoding.UTF8.GetBytes(GetJwtSecret());
 
         try
         {
             tokenHandler.ValidateToken(token, new TokenValidationParameters
             {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ValidateLifetime = validateLifetime,
                 ValidateIssuerSigningKey = true,
-                ValidIssuer = _config["Jwt:Issuer"],
-                ValidAudience = _config["Jwt:Audience"],
                 IssuerSigningKey = new SymmetricSecurityKey(key)
             }, out SecurityToken validatedToken);
 
             var jwtToken = (JwtSecurityToken)validatedToken;
-            var userId = int.Parse(jwtToken.Claims.First(x => x.Type == ClaimTypes.NameIdentifier).Value);
+            var userId = jwtToken.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userId, out var parsedUserId))
+                return null;
 
-            return userId;
+            return new UserComposeDTO
+            {
+                Id = parsedUserId,
+                Name = jwtToken.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Name)?.Value,
+                Email = jwtToken.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value
+            };
         }
         catch
         {
@@ -136,9 +139,17 @@ public class TokenService
         }
     }
 
-    private string GetRequiredSetting(string key)
+    private string GetJwtSecret()
     {
-        return _config[key]
-            ?? throw new InvalidOperationException($"Configuracao obrigatoria ausente: {key}");
+        return _config["RouteXFlow:JwtSecret"]
+            ?? Environment.GetEnvironmentVariable("ROUTE_X_FLOW_JWT_SECRET")
+            ?? throw new InvalidOperationException("Configuracao obrigatoria ausente: RouteXFlow:JwtSecret");
+    }
+
+    private double GetExpireMinutes()
+    {
+        return double.TryParse(_config["RouteXFlow:ExpireMinutes"], out var minutes) && minutes > 0
+            ? minutes
+            : 60;
     }
 }

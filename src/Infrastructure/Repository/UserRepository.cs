@@ -1,6 +1,7 @@
 using API_RouteXFlow.Domain.Data.Entities;
 using API_RouteXFlow.Interfaces.Repository;
 using Infrastructure.Persistence.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace API_RouteXFlow.Repository;
 
@@ -15,11 +16,17 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> GetUserByIdAsync(int userId)
     {
-        return null;
+        return await _dbContext.Users
+            .AsNoTracking()
+            .Where(x => x.Id == userId)
+            .FirstOrDefaultAsync();
     }
 
-    public async Task<User?> GetUserByLoginAsync(string username, string password)
+    public async Task<User?> GetUserByLoginAsync(string email, string passwordHash)
     {
-        return null;
+        return await _dbContext.Users
+            .AsNoTracking()
+            .Where(x => x.Email == email && x.PasswordHash == passwordHash)
+            .FirstOrDefaultAsync();
     }
 }

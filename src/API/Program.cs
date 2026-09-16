@@ -135,8 +135,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ClockSkew = TimeSpan.Zero,
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(
-                    builder.Configuration["SantosTech:JwtSecret"]
-                    ?? throw new InvalidOperationException("SantosTech:JwtSecret não configurado")
+                    Environment.GetEnvironmentVariable("ROUTE_X_FLOW_JWT_SECRET")
+                    ?? throw new InvalidOperationException("JwSecret não configurado")
                 )
             ),
         };
@@ -156,8 +156,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     return Task.CompletedTask;
                 }
 
-                // New centralized auth uses access_token cookie
-                if (context.Request.Cookies.TryGetValue("access_token", out var cookieToken))
+                if (context.Request.Cookies.TryGetValue(TokenService.AuthCookieName, out var cookieToken))
                 {
                     context.Token = cookieToken;
                 }
