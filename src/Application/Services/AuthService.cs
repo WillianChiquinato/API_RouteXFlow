@@ -2,6 +2,7 @@ using API_RouteXFlow.Domain.Data.Entities;
 using API_RouteXFlow.Interfaces.Repository;
 using API_RouteXFlow.Interfaces.Services;
 using API_RouteXFlow.Responses;
+using BCrypt.Net;
 
 namespace API_RouteXFlow.Services;
 
@@ -20,11 +21,18 @@ public class AuthService : IAuthService
     {
         try
         {
-            var user = await _userRepository.GetUserByLoginAsync(request.Email, request.Password);
+            var user = await _userRepository.GetUserByEmailAsync(request.Email);
 
             if (user == null)
             {
                 return CustomResponse<string>.Fail("Usuário ou senha inválidos.");
+            }
+
+            bool validatePassword = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
+
+            if (!validatePassword)
+            {
+                return CustomResponse<string>.Fail("E-mail ou senha inválidos.");
             }
 
             var userComposeDTO = new UserComposeDTO

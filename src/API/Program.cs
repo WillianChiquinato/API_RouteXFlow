@@ -1,5 +1,7 @@
 using System.Text;
 using System.Threading.RateLimiting;
+using Amazon.S3;
+using Amazon.S3.Util;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.OpenApi;
 using API_RouteXFlow.DependencyInjection;
@@ -120,6 +122,18 @@ builder.Services.AddRateLimiter(options =>
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString, b => b.MigrationsAssembly("Infrastructure")));
 
+var storageEndpoint = Environment.GetEnvironmentVariable("STORAGE_ENDPOINT") ?? "http://localhost:8333";
+var storageAccessKey = Environment.GetEnvironmentVariable("STORAGE_ACCESS_KEY");
+var storageSecretKey = Environment.GetEnvironmentVariable("STORAGE_SECRET_KEY");
+var storageBucketName = Environment.GetEnvironmentVariable("STORAGE_BUCKET_NAME") ?? "routexflow";
+
+builder.Services.AddSingleton<IAmazonS3>(_ => new AmazonS3Client(storageAccessKey, storageSecretKey, new AmazonS3Config
+{
+    ServiceURL = storageEndpoint,
+    ForcePathStyle = true,
+    UseHttp = storageEndpoint.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+}));
+
 builder.Services.AddProjectDependencies();
 builder.Services.AddHttpClient();
 
@@ -182,6 +196,12 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
+
+    var s3Client = scope.ServiceProvider.GetRequiredService<IAmazonS3>();
+    if (!await AmazonS3Util.DoesS3BucketExistV2Async(s3Client, storageBucketName))
+    {
+        await s3Client.PutBucketAsync(storageBucketName);
+    }
 }
 
 app.UseRateLimiter();

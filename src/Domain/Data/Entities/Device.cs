@@ -21,4 +21,7 @@ public class Device : BaseEntity
 
     [Column("type")]
     public DeviceType Type { get; set; }
+    
+    [Column("connected")]
+    public bool Connected { get; set; }
 }

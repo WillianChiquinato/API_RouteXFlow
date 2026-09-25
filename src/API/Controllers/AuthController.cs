@@ -30,19 +30,6 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Login(LoginRequest request)
     {
-        var userIdentify = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                     ?? User.FindFirstValue("sub")
-                     ?? string.Empty;
-
-        if (!string.IsNullOrEmpty(userIdentify))
-        {
-            var response = new CustomResponse<string>(false, new List<string>
-            {
-                "Usuário ja autenticado, não é possível realizar login novamente simultaneamente."
-            }, null);
-            return Unauthorized(response);
-        }
-
         var auth = await _authService.LoginAsync(request);
 
         if (auth.Success && auth.Result is not null)
@@ -53,7 +40,8 @@ public class AuthController : ControllerBase
             : NotFound(auth);
     }
     
-    [HttpGet("me")]
+    [HttpGet]
+    [Route("me")]
     public async Task<IActionResult> Me()
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
@@ -84,7 +72,8 @@ public class AuthController : ControllerBase
         return Ok(new CustomResponse<MeResponse>(true, new List<string>(), me));
     }
 
-    [HttpPost("refresh")]
+    [HttpPost]
+    [Route("refresh")]
     [AllowAnonymous]
     public async Task<IActionResult> Refresh()
     {

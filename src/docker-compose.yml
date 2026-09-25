@@ -8,6 +8,7 @@ services:
       - "8080:8080"
     depends_on:
       - db
+      - storage
 
   db:
     image: postgres:16
@@ -22,5 +23,19 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  storage:
+    image: chrislusf/seaweedfs
+    container_name: routeXflow_storage
+    restart: unless-stopped
+    command: mini -dir=/data -s3.config=/etc/seaweedfs/s3_config.json -bucket=routexflow
+    ports:
+      - "8333:8333" # Porta para a API do .NET conectar (AWSSDK.S3)
+      - "8888:8888" # Filer (navegador de arquivos)
+      - "23646:23646" # Admin UI (gestão de credenciais/identidades)
+    volumes:
+      - storage_data:/data
+      - ./seaweedfs/s3_config.json:/etc/seaweedfs/s3_config.json:ro
+
 volumes:
   pgdata:
+  storage_data:

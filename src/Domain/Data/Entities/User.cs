@@ -12,6 +12,9 @@ public class User : BaseEntity
     [Column("email")]
     public string Email { get; set; } = string.Empty;
 
+    [Column("cpf")]
+    public string Cpf { get; set; } = string.Empty;
+
     [Column("phone_number")]
     public string PhoneNumber { get; set; } = string.Empty;
 

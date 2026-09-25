@@ -10,6 +10,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="AWSSDK.S3" Version="3.7.415.5" />
   </ItemGroup>
 
   <PropertyGroup>

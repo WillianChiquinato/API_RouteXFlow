@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260924150911_dBSeeds")]
+    partial class dBSeeds
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -112,40 +115,6 @@ namespace Infrastructure.Migrations
                             TypeApps = 2,
                             UpdatedAt = new DateTime(2024, 1, 1, 12, 0, 0, 0, DateTimeKind.Utc)
                         });
-                });
-
-            modelBuilder.Entity("API_RouteXFlow.Domain.Data.Entities.AppsVinculatedUser", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AppId")
-                        .HasColumnType("integer")
-                        .HasColumnName("app_id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AppId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("apps_vinculated_user");
                 });
 
             modelBuilder.Entity("API_RouteXFlow.Domain.Data.Entities.Container", b =>
@@ -424,10 +393,6 @@ namespace Infrastructure.Migrations
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("Connected")
-                        .HasColumnType("boolean")
-                        .HasColumnName("connected");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -799,25 +764,6 @@ namespace Infrastructure.Migrations
                     b.ToTable("work_session");
                 });
 
-            modelBuilder.Entity("API_RouteXFlow.Domain.Data.Entities.AppsVinculatedUser", b =>
-                {
-                    b.HasOne("API_RouteXFlow.Domain.Data.Entities.Apps", "App")
-                        .WithMany()
-                        .HasForeignKey("AppId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("API_RouteXFlow.Domain.Data.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("App");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("API_RouteXFlow.Domain.Data.Entities.Container", b =>
                 {
                     b.HasOne("API_RouteXFlow.Domain.Data.Entities.User", "User")
@@ -832,7 +778,7 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("API_RouteXFlow.Domain.Data.Entities.ContainerDevices", b =>
                 {
                     b.HasOne("API_RouteXFlow.Domain.Data.Entities.Container", "Container")
-                        .WithMany("ContainerDevices")
+                        .WithMany()
                         .HasForeignKey("ContainerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -947,11 +893,6 @@ namespace Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("API_RouteXFlow.Domain.Data.Entities.Container", b =>
-                {
-                    b.Navigation("ContainerDevices");
                 });
 #pragma warning restore 612, 618
         }

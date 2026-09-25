@@ -9,6 +9,8 @@ public class AppDbContext : DbContext
         : base(options)
     {}
 
+    public DbSet<Apps> Apps { get; set; }
+    public DbSet<AppsVinculatedUser> AppsVinculatedUser { get; set; }
     public DbSet<User> Users { get; set; }
     public DbSet<Role> Roles { get; set; }
     public DbSet<RouteEvaluation> RouteEvaluations { get; set; }
@@ -57,5 +59,38 @@ public class AppDbContext : DbContext
                 entityEntry.Property(nameof(BaseEntity.CreatedAt)).IsModified = false;
             }
         }
+    }
+
+    //SEEDS  
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<Status>().HasData(
+            new Status { Id = 11, Name = "Ativo", CreatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc) },
+            new Status { Id = 12, Name = "Inativo", CreatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc) },
+            new Status { Id = 13, Name = "Suspenso", CreatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc) },
+            new Status { Id = 14, Name = "Aprovado", CreatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc) },
+            new Status { Id = 15, Name = "Reprovado", CreatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc) },
+            new Status { Id = 16, Name = "Em Análise", CreatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc) },
+            new Status { Id = 17, Name = "Pendente", CreatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc) },
+            new Status { Id = 18, Name = "Em Andamento", CreatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc) },
+            new Status { Id = 19, Name = "Concluído", CreatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc) },
+            new Status { Id = 20, Name = "Cancelado", CreatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc) }
+        );
+
+        modelBuilder.Entity<Role>().HasData(
+            new Role { Id = 1, Name = "Super-Admin", Description = "Perfil feito para Desenvolvedores e administradores gerais",CreatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc) },
+            new Role { Id = 2, Name = "Admin", Description = "Perfil feito para administradores comuns",CreatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc) },
+            new Role { Id = 3, Name = "Operação", Description = "Perfil para operadores", CreatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc) }
+        );
+
+        modelBuilder.Entity<Apps>().HasData(
+            new Apps { Id = 1, Name = "Ifood", Description = "Aplicativo Vermelho de entregas", IconUrl = "", TypeApps = TypeApps.Delivery, CreatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc) },
+            new Apps { Id = 2, Name = "99Food", Description = "Aplicativo Amarelo de entregas", IconUrl = "", TypeApps = TypeApps.Delivery, CreatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc) },
+            new Apps { Id = 3, Name = "Keeta", Description = "Aplicativo Verde e Amarelo de entregas", IconUrl = "", TypeApps = TypeApps.Delivery, CreatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc) },
+            new Apps { Id = 4, Name = "Shoppe", Description = "Aplicativo vermelho de entregas", IconUrl = "", TypeApps = TypeApps.MarketPlace, CreatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc) },
+            new Apps { Id = 5, Name = "Mercado Livre", Description = "Aplicativo Amarelo de entregas", IconUrl = "", TypeApps = TypeApps.MarketPlace, CreatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc) }
+        );
     }
 }

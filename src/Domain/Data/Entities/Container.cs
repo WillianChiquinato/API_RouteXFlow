@@ -17,4 +17,6 @@ public class Container : BaseEntity
 
     [ForeignKey(nameof(UserId))]
     public User? User { get; set; }
+
+    public ICollection<ContainerDevices> ContainerDevices { get; set; } = new List<ContainerDevices>();
 }
