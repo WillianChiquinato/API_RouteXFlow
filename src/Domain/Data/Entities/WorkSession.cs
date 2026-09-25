@@ -12,6 +12,12 @@ public class WorkSession : BaseEntity
     [ForeignKey(nameof(UserId))]
     public User? User { get; set; }
 
+    [Column("container_id")]
+    public int? ContainerId { get; set; }
+
+    [ForeignKey(nameof(ContainerId))]
+    public Container? Container { get; set; }
+
     [Column("start_time")]
     public DateTime StartTime { get; set; }
 

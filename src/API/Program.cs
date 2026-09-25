@@ -53,6 +53,12 @@ builder.Services.AddScoped<TokenService>();
 
 builder.Services.AddHttpClient("RouteXFlowApi")
     .ConfigureHttpClient(c => c.Timeout = TimeSpan.FromSeconds(2));
+
+builder.Services.AddHttpClient("Groq", client =>
+{
+    client.BaseAddress = new Uri("https://api.groq.com/openai/v1/");
+    client.Timeout = TimeSpan.FromSeconds(60);
+});
 builder.Configuration["RouteXFlow:JwtSecret"] = Environment.GetEnvironmentVariable("ROUTE_X_FLOW_JWT_SECRET");
 
 // Swagger

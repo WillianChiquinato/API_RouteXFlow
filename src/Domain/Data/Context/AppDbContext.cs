@@ -22,6 +22,8 @@ public class AppDbContext : DbContext
     public DbSet<DeliveryOffers> DeliveryOffers { get; set; }
     public DbSet<DeliveryStops> DeliveryStops { get; set; }
     public DbSet<Deliveries> Deliveries { get; set; }
+    public DbSet<FinanceEntry> FinanceEntries { get; set; }
+    public DbSet<FinanceMonthClosure> FinanceMonthClosures { get; set; }
 
     public override int SaveChanges()
     {
@@ -84,6 +86,13 @@ public class AppDbContext : DbContext
             new Role { Id = 2, Name = "Admin", Description = "Perfil feito para administradores comuns",CreatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc) },
             new Role { Id = 3, Name = "Operação", Description = "Perfil para operadores", CreatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc) }
         );
+
+        modelBuilder.Entity<FinanceEntry>().Property(e => e.Type).HasConversion<string>();
+        modelBuilder.Entity<FinanceEntry>().Property(e => e.Source).HasConversion<string>();
+        modelBuilder.Entity<FinanceEntry>().Property(e => e.Category).HasConversion<string>();
+        modelBuilder.Entity<FinanceEntry>().HasIndex(e => new { e.UserId, e.Date });
+
+        modelBuilder.Entity<FinanceMonthClosure>().HasIndex(c => new { c.UserId, c.Year, c.Month }).IsUnique();
 
         modelBuilder.Entity<Apps>().HasData(
             new Apps { Id = 1, Name = "Ifood", Description = "Aplicativo Vermelho de entregas", IconUrl = "", TypeApps = TypeApps.Delivery, CreatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc) },

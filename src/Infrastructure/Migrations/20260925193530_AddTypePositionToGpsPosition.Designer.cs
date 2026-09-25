@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260925193530_AddTypePositionToGpsPosition")]
+    partial class AddTypePositionToGpsPosition
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -885,10 +888,6 @@ namespace Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("ContainerId")
-                        .HasColumnType("integer")
-                        .HasColumnName("container_id");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -910,8 +909,6 @@ namespace Infrastructure.Migrations
                         .HasColumnName("user_id");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ContainerId");
 
                     b.HasIndex("UserId");
 
@@ -1081,17 +1078,11 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("API_RouteXFlow.Domain.Data.Entities.WorkSession", b =>
                 {
-                    b.HasOne("API_RouteXFlow.Domain.Data.Entities.Container", "Container")
-                        .WithMany()
-                        .HasForeignKey("ContainerId");
-
                     b.HasOne("API_RouteXFlow.Domain.Data.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Container");
 
                     b.Navigation("User");
                 });
