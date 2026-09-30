@@ -1,7 +1,17 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace API_RouteXFlow.Domain.Data.Entities;
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum StateSession
+{
+    Aberto = 0,
+    Trabalhando = 1,
+    Finalizado = 2,
+    Pausada = 3
+}
 
 [Table("work_session")]
 public class WorkSession : BaseEntity
@@ -15,12 +25,15 @@ public class WorkSession : BaseEntity
     [Column("container_id")]
     public int? ContainerId { get; set; }
 
-    [ForeignKey(nameof(ContainerId))]
-    public Container? Container { get; set; }
+    [Column("state")]
+    public StateSession State { get; set; }
 
     [Column("start_time")]
     public DateTime StartTime { get; set; }
 
     [Column("end_time")]
     public DateTime? EndTime { get; set; }
+
+    [ForeignKey(nameof(ContainerId))]
+    public Container? Container { get; set; }
 }
