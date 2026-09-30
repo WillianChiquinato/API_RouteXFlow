@@ -191,13 +191,6 @@ var app = builder.Build();
 app.UseForwardedHeaders();
 app.UseCors("AllowFrontend");
 
-// [SEC] Swagger only in development
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -243,6 +236,8 @@ static string[] ResolveAllowedCorsOrigins(ConfigurationManager configuration)
         ? normalizedOrigins
         : ["http://localhost:3000"];
 }
+app.UsePresentation(builder.Environment);
+
 app.Run();
 
 static string ResolveRateLimitKey(HttpContext httpContext, bool isDevelopment)

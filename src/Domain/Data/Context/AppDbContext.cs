@@ -12,6 +12,7 @@ public class AppDbContext : DbContext
     public DbSet<Apps> Apps { get; set; }
     public DbSet<AppsVinculatedUser> AppsVinculatedUser { get; set; }
     public DbSet<User> Users { get; set; }
+    public DbSet<Preferences> Preferences { get; set; }
     public DbSet<Role> Roles { get; set; }
     public DbSet<RouteEvaluation> RouteEvaluations { get; set; }
     public DbSet<Container> Containers { get; set; }

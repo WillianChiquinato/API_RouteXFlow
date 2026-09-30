@@ -5,6 +5,7 @@ using API_RouteXFlow.Domain.Data.Entities;
 using API_RouteXFlow.Interfaces.Services;
 using API_RouteXFlow.Responses;
 using API_RouteXFlow.Services;
+using Application.DTO;
 using Application.DTO.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -66,7 +67,10 @@ public class AuthController : ControllerBase
             Role = User.FindAll(ClaimTypes.Role)
                 .Select(c => c.Value)
                 .ToList(),
-            User = user.Result ?? new User()
+            User = user.Result is null ? new UserProfileDTO() : UserProfileDTO.From(user.Result),
+            Preferences = user.Result?.Preferences?.FirstOrDefault() is { } preferences
+                ? UserPreferencesDTO.From(preferences)
+                : new UserPreferencesDTO(),
         };
 
         return Ok(new CustomResponse<MeResponse>(true, new List<string>(), me));

@@ -19,6 +19,8 @@ public class UserRepository : IUserRepository
         return await _dbContext.Users
             .AsNoTracking()
             .Where(x => x.Id == userId)
+            .Include(x => x.Role)
+            .Include(x => x.Preferences)
             .FirstOrDefaultAsync();
     }
 
@@ -45,7 +47,8 @@ public class UserRepository : IUserRepository
             PhoneNumber = userRegisterRequest.PhoneNumber.Trim(),
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(userRegisterRequest.Password),
             RoleId = userRegisterRequest.RoleId,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            Preferences = { new Preferences() }
         };
 
         _dbContext.Users.Add(user);
@@ -54,11 +57,36 @@ public class UserRepository : IUserRepository
         return affectedRows > 0 ? user.Id : 0;
     }
 
+    public async Task<Preferences?> GetPreferencesUserByIdAsync(int userId)
+    {
+        return await _dbContext.Preferences
+            .AsNoTracking()
+            .Where(x => x.UserId == userId)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<bool> UpdatePreferenceAsync(Preferences preferencesUser)
+    {
+        // Usuários anteriores à tabela de preferências ainda não têm linha: cria na primeira gravação.
+        if (preferencesUser.Id == 0)
+            _dbContext.Preferences.Add(preferencesUser);
+        else
+            _dbContext.Preferences.Update(preferencesUser);
+
+        return await _dbContext.SaveChangesAsync() > 0;
+    }
+
     public async Task<User?> GetUserByEmailAsync(string email)
     {
         return await _dbContext.Users
             .AsNoTracking()
             .Where(x => x.Email == email)
             .FirstOrDefaultAsync();
+    }
+
+    public async Task<bool> UpdateUserAsync(User user)
+    {
+        _dbContext.Users.Update(user);
+        return await _dbContext.SaveChangesAsync() > 0;
     }
 }

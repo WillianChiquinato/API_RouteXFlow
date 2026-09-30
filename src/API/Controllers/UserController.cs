@@ -30,4 +30,40 @@ public class UserController : ControllerBase
         
         return Ok(user);
     }
+
+    [HttpPut]
+    [Route("profile")]
+    public async Task<IActionResult> UpdateProfile(UpdateProfileRequest request)
+    {
+        if (!TryGetUserId(out var userId)) return Unauthorized();
+
+        var response = await _userService.UpdateProfileAsync(userId, request);
+        return response.Success ? Ok(response) : BadRequest(response);
+    }
+
+    [HttpPut]
+    [Route("preferences")]
+    public async Task<IActionResult> UpdatePreferences(UpdatePreferencesRequest request)
+    {
+        if (!TryGetUserId(out var userId)) return Unauthorized();
+
+        var response = await _userService.UpdatePreferencesAsync(userId, request);
+        return response.Success ? Ok(response) : BadRequest(response);
+    }
+
+    [HttpPut]
+    [Route("password")]
+    public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
+    {
+        if (!TryGetUserId(out var userId)) return Unauthorized();
+
+        var response = await _userService.ChangePasswordAsync(userId, request);
+        return response.Success ? Ok(response) : BadRequest(response);
+    }
+
+    private bool TryGetUserId(out int userId)
+    {
+        var claim = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        return int.TryParse(claim, out userId);
+    }
 }

@@ -7,5 +7,8 @@ public interface IUserRepository
     Task<User?> GetUserByIdAsync(int userId);
     Task<List<User>> GetAllUsersAsync(string? email);
     Task<int> RegisterUserAsync(UserRegisterRequest userRegisterRequest);
+    Task<Preferences?> GetPreferencesUserByIdAsync(int userId);
+    Task<bool> UpdatePreferenceAsync(Preferences preferencesUser);
     Task<User?> GetUserByEmailAsync(string email);
+    Task<bool> UpdateUserAsync(User user);
 }

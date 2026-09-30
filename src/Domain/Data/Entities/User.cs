@@ -26,4 +26,7 @@ public class User : BaseEntity
 
     [ForeignKey(nameof(RoleId))]
     public Role? Role { get; set; }
+    
+    public ICollection<Role> Roles { get; set; } = new List<Role>();
+    public ICollection<Preferences> Preferences { get; set; } = new List<Preferences>();
 }

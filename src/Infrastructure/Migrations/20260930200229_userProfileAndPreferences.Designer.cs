@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260930200229_userProfileAndPreferences")]
+    partial class userProfileAndPreferences
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -615,71 +618,6 @@ namespace Infrastructure.Migrations
                     b.ToTable("gps_position");
                 });
 
-            modelBuilder.Entity("API_RouteXFlow.Domain.Data.Entities.Preferences", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("DateFormat")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("date_format");
-
-                    b.Property<string>("DistanceUnit")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("distance_unit");
-
-                    b.Property<decimal?>("FuelPricePerLiter")
-                        .HasColumnType("numeric")
-                        .HasColumnName("fuel_price_per_liter");
-
-                    b.Property<string>("FuelUnit")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("fuel_unit");
-
-                    b.Property<string>("TimeFormat")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("time_format");
-
-                    b.Property<string>("TimeZone")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("time_zone");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer")
-                        .HasColumnName("user_id");
-
-                    b.Property<decimal?>("VehicleKmPerLiter")
-                        .HasColumnType("numeric")
-                        .HasColumnName("vehicle_km_per_liter");
-
-                    b.Property<string>("VehicleName")
-                        .HasColumnType("text")
-                        .HasColumnName("vehicle_name");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("preferences");
-                });
-
             modelBuilder.Entity("API_RouteXFlow.Domain.Data.Entities.Role", b =>
                 {
                     b.Property<int>("Id")
@@ -707,12 +645,7 @@ namespace Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
-                    b.Property<int?>("UserId")
-                        .HasColumnType("integer");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("role");
 
@@ -1009,10 +942,29 @@ namespace Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<string>("DateFormat")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("date_format");
+
+                    b.Property<string>("DistanceUnit")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("distance_unit");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("email");
+
+                    b.Property<decimal?>("FuelPricePerLiter")
+                        .HasColumnType("numeric")
+                        .HasColumnName("fuel_price_per_liter");
+
+                    b.Property<string>("FuelUnit")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("fuel_unit");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -1028,6 +980,16 @@ namespace Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("role_id");
 
+                    b.Property<string>("TimeFormat")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("time_format");
+
+                    b.Property<string>("TimeZone")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("time_zone");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -1036,6 +998,15 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("username");
+
+                    b.Property<decimal?>("VehicleKmPerLiter")
+                        .HasColumnType("numeric")
+                        .HasColumnName("vehicle_km_per_liter");
+
+                    b.Property<string>("VehicleName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("vehicle_name");
 
                     b.HasKey("Id");
 
@@ -1218,24 +1189,6 @@ namespace Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("API_RouteXFlow.Domain.Data.Entities.Preferences", b =>
-                {
-                    b.HasOne("API_RouteXFlow.Domain.Data.Entities.User", "User")
-                        .WithMany("Preferences")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("API_RouteXFlow.Domain.Data.Entities.Role", b =>
-                {
-                    b.HasOne("API_RouteXFlow.Domain.Data.Entities.User", null)
-                        .WithMany("Roles")
-                        .HasForeignKey("UserId");
-                });
-
             modelBuilder.Entity("API_RouteXFlow.Domain.Data.Entities.RouteEvaluation", b =>
                 {
                     b.HasOne("API_RouteXFlow.Domain.Data.Entities.DeliveryOffers", "DeliveryOffer")
@@ -1335,13 +1288,6 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("API_RouteXFlow.Domain.Data.Entities.RoutePosition", b =>
                 {
                     b.Navigation("Stops");
-                });
-
-            modelBuilder.Entity("API_RouteXFlow.Domain.Data.Entities.User", b =>
-                {
-                    b.Navigation("Preferences");
-
-                    b.Navigation("Roles");
                 });
 #pragma warning restore 612, 618
         }

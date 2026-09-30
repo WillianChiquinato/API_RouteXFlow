@@ -8,5 +8,6 @@ namespace Application.DTO.Responses;
         public string? Name { get; set; }
         public string? Email { get; set; }
         public List<string> Role { get; set; } = new();
-        public User User { get; set; } = new();
+        public UserProfileDTO User { get; set; } = new();
+        public UserPreferencesDTO Preferences { get; set; } = new();
     }
