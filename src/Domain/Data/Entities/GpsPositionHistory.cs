@@ -19,17 +19,14 @@ public class GpsPositionHistory : BaseEntity
     public TypePosition TypePosition { get; set; }
 
     [Column("latitude")]
-    public double Latitude { get; set; }
+    public string Latitude { get; set; } = string.Empty;
 
     [Column("longitude")]
-    public double Longitude { get; set; }
+    public string Longitude { get; set; } = string.Empty;
 
     [Column("timestamp")]
     public DateTime Timestamp { get; set; }
 
-    [Column("worksession_id")]
-    public int WorkSessionId { get; set; }
-
-    [ForeignKey(nameof(WorkSessionId))]
-    public WorkSession? WorkSession { get; set; }
+    [Column("address")]
+    public string Address { get; set; } = string.Empty;
 }

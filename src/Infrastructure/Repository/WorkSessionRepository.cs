@@ -52,12 +52,49 @@ public class WorkSessionRepository : IWorkSessionRepository
         return session;
     }
 
-    public async Task<GpsPositionHistory> AddGpsPositionAsync(GpsPositionHistory position)
+    public async Task<GpsPositionHistory> AddGpsPositionAsync(GpsRoutesHistory position)
     {
-        _dbContext.Add(position);
+        var gpsPositionHistory = new GpsPositionHistory
+        {
+            TypePosition = position.TypePosition,
+            Latitude = position.Latitude,
+            Longitude = position.Longitude,
+            Timestamp = position.Timestamp,
+            Address = position.Address
+        };
+
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync();
+
+        _dbContext.GpsPositions.Add(gpsPositionHistory);
         await _dbContext.SaveChangesAsync();
 
-        return position;
+        switch (position.TypePosition)
+        {
+            case TypePosition.StartPosition:
+                _dbContext.RoutePositions.Add(new RoutePosition
+                {
+                    Type = position.TypeApps,
+                    WorkSessionId = position.WorkSessionId,
+                    OriginGpsPositionId = gpsPositionHistory.Id,
+                    DestinationGpsPositionId = null
+                });
+                break;
+
+            case TypePosition.FinishedPosition:
+                var route = await _dbContext.RoutePositions
+                    .FirstOrDefaultAsync(r => r.WorkSessionId == position.WorkSessionId && r.DestinationGpsPositionId == null);
+
+                if (route is not null)
+                {
+                    route.DestinationGpsPositionId = gpsPositionHistory.Id;
+                }
+                break;
+        }
+
+        await _dbContext.SaveChangesAsync();
+        await transaction.CommitAsync();
+
+        return gpsPositionHistory;
     }
 
     public async Task<bool> FinishWorkSessionAsync(int id, DateTime endTime)

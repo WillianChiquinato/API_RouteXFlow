@@ -60,19 +60,21 @@ public class WorkSessionService : IWorkSessionService
             var session = new WorkSession
             {
                 UserId = userId,
+                State = StateSession.Aberto,
                 ContainerId = container.Id,
                 StartTime = DateTime.UtcNow
             };
 
             var createdSession = await _workSessionRepository.CreateWorkSessionAsync(session);
 
-            await _workSessionRepository.AddGpsPositionAsync(new GpsPositionHistory
+            await _workSessionRepository.AddGpsPositionAsync(new GpsRoutesHistory
             {
                 WorkSessionId = createdSession.Id,
                 TypePosition = TypePosition.StartPosition,
                 Latitude = request.Latitude,
                 Longitude = request.Longitude,
-                Timestamp = DateTime.UtcNow
+                Timestamp = DateTime.UtcNow,
+                Address = request.Address
             });
 
             var response = new WorkSessionSummaryResponse
@@ -124,13 +126,14 @@ public class WorkSessionService : IWorkSessionService
                 return new CustomResponse<WorkSessionSummaryResponse>(false, new List<string> { "Erro ao finalizar a corrida." }, null);
             }
 
-            await _workSessionRepository.AddGpsPositionAsync(new GpsPositionHistory
+            await _workSessionRepository.AddGpsPositionAsync(new GpsRoutesHistory
             {
                 WorkSessionId = workSessionId,
                 TypePosition = TypePosition.FinishedPosition,
                 Latitude = request.Latitude,
                 Longitude = request.Longitude,
-                Timestamp = endTime
+                Timestamp = endTime,
+                Address = request.Address
             });
 
             var detail = await _workSessionRepository.GetSessionDetailAsync(userId, workSessionId);

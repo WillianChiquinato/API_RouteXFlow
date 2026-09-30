@@ -19,6 +19,8 @@ public class AppDbContext : DbContext
     public DbSet<Device> Devices { get; set; }
     public DbSet<WorkSession> WorkSessions { get; set; }
     public DbSet<GpsPositionHistory> GpsPositions { get; set; }
+    public DbSet<RoutePosition> RoutePositions { get; set; }
+    public DbSet<RoutePositionStops> RoutePositionStops { get; set; }
     public DbSet<DeliveryOffers> DeliveryOffers { get; set; }
     public DbSet<DeliveryStops> DeliveryStops { get; set; }
     public DbSet<Deliveries> Deliveries { get; set; }

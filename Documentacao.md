@@ -340,42 +340,87 @@ Localização atual, rota atual, deliveries ativas, stops pendentes, estado temp
 
 ---
 
+# 10. GPS, CEP e localização
+
+* O celular de navegação (B) fornece a posição atual.
+* Posições são gravadas em `gps_position` (`GpsPositionHistory`, ver 6.7) com `TypePosition`: `StartPosition`, `RoutePosition`, `FinishedPosition`.
+* Hoje só são gravadas as posições de **início** e **fim** da `WorkSession`. Ao iniciar, o back também cria um `RoutePosition` (origem = posição inicial); ao finalizar, preenche o destino dele.
+* ⏳ Gravação em lote do trajeto (`RoutePosition` intermediário).
+* **Não assumir que CEP existe**: a oferta pode vir só com endereço em texto ou coordenadas. A normalização (seção 15) deve aceitar qualquer um dos três.
+* ⏳ Geocoding (texto → lat/long): provedor ainda não escolhido.
+
+---
+
+# 11. Contrato HTTP (Back ↔ Admin ↔ Android)
+
+Base: `/api/{Controller}/{acao}` (rotas por ação, ex.: `/api/WorkSession/start`). Swagger só em desenvolvimento.
+
+**Envelope de resposta (todos os endpoints):**
+
+```json
+{ "success": true, "errors": [], "result": { }, "totalRows": null }
+```
+
+Erros de negócio vêm com `success=false` e mensagens em `errors`; nunca depender só do status HTTP.
+
+**Autenticação**
+* JWT. O token viaja em **cookie HttpOnly** `route_x_flow_token` (`SameSite=None; Secure` em HTTPS, `Lax` em HTTP) ou no header `Authorization: Bearer`. O Admin web usa o cookie (`credentials: include`); o Android pode usar o Bearer.
+* `POST /api/Auth/login` · `POST /api/Auth/refresh` · `POST /api/Auth/logout` · `GET /api/Auth/me`.
+* Cliente deve, ao receber 401, chamar `refresh` **uma vez** e repetir a requisição (o Admin já faz isso em `baseAPI.ts`).
+* Todo recurso é filtrado pelo `userId` do token. Existe rate limit global e mais restrito nas rotas de auth (429).
+
+**Endpoints atuais**
+
+| Área | Endpoints |
+|---|---|
+| Auth | `login`, `refresh`, `logout`, `me` |
+| User | `POST register` (anônimo) |
+| Role | `GET getRoles` (anônimo) |
+| App | `GET getApps` (anônimo) |
+| Container | `getContainers`, `registerContainer`, `updateContainer` |
+| Device | `getDevices`, `registerDevice`, `updateDevice`, `DELETE deleteDevice/{id}` |
+| WorkSession | `POST start`, `POST finish/{id}` (ambos com `latitude`, `longitude`, `address`), `GET getSessions` (filtro `startDate`/`endDate`), `GET getSession/{id}` |
+| Finance | `getEntries`, `getSummary`, `registerEntry`, `updateEntry`, `DELETE deleteEntry/{id}`, `getMonthClosure`, `closeMonth`, `generateAiReport` |
+| File | `POST upload`, `GET download/{key}`, `GET url/{key}`, `DELETE {key}` |
+
+**Pendências (⏳):** ofertas/decisão (`DeliveryOffers`), deliveries, GPS em lote, sincronização de dispositivo, baixa de pacotes (MarketPlace).
+
+Mudança de contrato: atualizar esta seção **antes** e avisar Admin e Android.
+
+---
+
 # 12. Backend
 
-**Stack:** .NET 10 · EF Core 10 + PostgreSQL 16 · SeaweedFS (S3) · JWT · Groq (IA financeira). Redis planejado.
-Arquitetura em camadas `API → Application → Domain` + `Infrastructure`: [specs/backend/architecture.md](specs/backend/architecture.md).
-
-Responsabilidades: autenticação, persistência e histórico, sessões, containers/devices, ofertas/entregas/avaliações (⏳), financeiro, arquivos, configurações.
-
-Contrato HTTP consumido por Admin e Mobile: [specs/backend/api-contract.md](specs/backend/api-contract.md).
-
-A comunicação crítica entre os celulares deve funcionar localmente e **não depender do back nem da internet**:
-
-```text
-Celular A ↕ Bluetooth ↕ Celular B
-```
+* **.NET 10**, camadas `API → Application → Domain + Infrastructure`; EF Core + PostgreSQL 16; SeaweedFS (S3) para arquivos; JWT; Groq (relatório de IA financeiro, só com dados agregados). Redis ⏳ (seção 9).
+* Estrutura em `src/`: `API` (controllers, Program.cs), `Application` (services, DTOs, `CustomResponse`), `Domain` (entidades, `AppDbContext`), `Infrastructure` (repositories, migrations).
+* Padrão: Controller fino → Service (regras, retorna `CustomResponse<T>`) → Repository (EF). Nunca devolver entidade crua, só DTO/Response.
+* Ambiente local: `src/docker-compose.yml` sobe API (8080), Postgres (5432) e SeaweedFS (S3 8333). Credenciais só em configuração local, nunca no repositório.
+* Migrations em `src/Infrastructure/Migrations`; toda mudança de entidade exige migration.
+* Testes em `tests/` (UnitTests e IntegrationTests).
+* **Pendências do back (⏳):** endpoints de oferta/decisão/delivery, atualização de `WorkSession.State`, ajustes de `Deliveries`/`DeliveryStops` (seção 6), rota `Type` na abertura da sessão.
 
 ---
 
-# 13. Android ⏳
+# 13. Admin Web (front) 🟡
 
-Não iniciado. O Android tem papel central no MVP: Accessibility Service para observar as interfaces dos apps de delivery.
-
-IMPORTANTE: não assumir que todos os dados estarão na árvore de acessibilidade. Podem existir scroll horizontal, componentes customizados, renderização parcial e elementos que não aparecem juntos. Pode ser preciso executar ações de acessibilidade (scroll) para ler conteúdo adicional, e o layout varia entre versões dos apps — por isso os parsers são **por plataforma e versionados**, com testes de fixture.
-
-Spec e decisões pendentes (Kotlin × cross-platform, RFCOMM × BLE, Route Engine no A × no back): [specs/mobile/README.md](specs/mobile/README.md).
+* **Nuxt 4 + Vue 3 + Pinia + PrimeVue**, na pasta irmã `admin-routeXflow`. Consome a API pelo contrato da seção 11 (`VITE_API_BASE_URL`).
+* Camadas: `app/infra/interfaces/services/*` (um serviço por controller), `baseAPI.ts` (ofetch com cookie + refresh automático), `middleware/auth.global.ts` (rotas públicas: `/login`, `/reset-password`).
+* Páginas atuais: `login`, `reset-password`, `index`, `sync`, `rides` (corridas), `finance`.
+* Papel: cadastro de containers/devices, **Sincronizar** (seção 5), iniciar/finalizar corrida, histórico de corridas e financeiro.
+* ⏳ Recuperação de senha (sem endpoint no back), dashboard com dados reais.
 
 ---
 
-# 14. CEP e localização
+# 14. Android ⏳
 
-iFood e 99Food podem não exibir CEP. O Route Engine **não pode depender de CEP**.
+Um único app instalado nos dois celulares; o papel (`DELIVERY_ENGINE` ou `NAVIGATION_MANAGER`) define o comportamento (seções 4 e 5).
 
-```text
-endereço → geocoding → latitude/longitude → distância → compatibilidade de rota
-```
-
-CEP é apenas informação auxiliar, quando existir.
+* **Celular A:** Accessibility Service (captura iFood/99Food), normalização, Route Engine (local, ver seção 15), envio por Bluetooth.
+* **Celular B:** GPS, tela de ofertas/rota, abertura do Waze, recebimento de eventos por Bluetooth, decisão do usuário.
+* Identidade própria `RTXF-XXXXXXXX` por dispositivo, nunca o MAC (seção 5). O back registra o aparelho em `Device`.
+* Comunicação local não depende do back; o back recebe o histórico depois (sessão, ofertas, GPS).
+* Usa o contrato da seção 11 (login, sessão, devices). Sem endpoints de oferta ainda.
+* **Decisões em aberto:** Kotlin nativo, Bluetooth RFCOMM × BLE, onde roda o Route Engine.
 
 ---
 
@@ -389,15 +434,11 @@ Localização atual → Pickup A → Delivery A → Pickup B → Delivery B
 
 Uma oferta nova tem várias posições possíveis de inserção; o engine testa as válidas (pickup antes do respectivo delivery) e calcula o impacto.
 
-Métricas: distância adicional, tempo adicional, desvio, valor/km, valor/hora (calculado), compatibilidade direcional, quantidade de stops, impacto nas entregas existentes.
-
-Versão 1 = heurística de inserção simples (ver spec). Detalhes e perguntas em aberto: [specs/backend/features/offers-route-engine.md](specs/backend/features/offers-route-engine.md).
+Métricas: distância adicional, tempo adicional, desvio, valor/km, valor/hora (calculado), compatibilidade direcional, quantidade de stops, impacto nas entregas existentes..
 
 ---
 
 # 16. Princípios de arquitetura
-
-Versão normativa: [specs/constitution.md](specs/constitution.md). Resumo:
 
 * MVP = **monólito**; sem microservices sem necessidade concreta.
 * Sem abstrações, tabelas para dados derivados, ou índices prematuros.
@@ -410,9 +451,7 @@ Versão normativa: [specs/constitution.md](specs/constitution.md). Resumo:
 
 # 17. Regras para a IA
 
-Ao trabalhar neste projeto, a IA deve seguir a [constituição](specs/constitution.md) e o fluxo SDD ([specs/README.md](specs/README.md)):
-
-1. Ler a spec da feature antes de codar; se não existir, propor a spec primeiro.
+1. Ler a seção da feature neste documento antes de codar; se não existir, propor a especificação primeiro.
 2. Respeitar as entidades e relações definidas; não criar/remover entidade sem justificar o impacto.
 3. Diferenciar sempre: oferta · avaliação · entrega · stop · sessão.
 4. Não assumir que oferta detectada foi aceita.
@@ -421,29 +460,12 @@ Ao trabalhar neste projeto, a IA deve seguir a [constituição](specs/constituti
 7. Não tratar o Bluetooth como dependente do back.
 8. Sem microservices no MVP sem necessidade concreta.
 9. Priorizar processamento local nas operações críticas de tempo real.
-10. Antes de alterar o banco: validar o impacto no fluxo e criar migration + atualizar `data-model.md`.
+10. Antes de alterar o banco: validar o impacto no fluxo, criar migration e atualizar a seção 6.
 11. Antes de criar índice: validar a consulta e medir.
 12. Ambiguidade arquitetural: apresentar alternativas e impactos antes de alterar o modelo.
-13. Mudança de contrato HTTP: atualizar `api-contract.md` primeiro e avisar Admin/Mobile.
+13. Mudança de contrato HTTP: atualizar a seção 11 primeiro e avisar Admin/Android.
 
 ---
-
-# 18. Estado atual e roadmap
-
-## Feito ✅
-Autenticação (JWT + cookie), cadastro de usuário e apps, containers/devices, work sessions (start/finish/histórico/detalhe), financeiro completo com fechamento mensal e relatório de IA, storage de arquivos, Admin web (login, sync, corridas, financeiro).
-
-## Próximos passos (ordem sugerida)
-
-1. **Estabilizar o back** — corrigir gaps 🔴 de segurança ([specs/backend/gaps.md](specs/backend/gaps.md): G-01, G-02, G-03, G-10, G-13, G-14, G-12) e o bug de `appsActives` (G-28).
-2. **Fechar o admin** — endpoints de recuperação de senha, dashboard com dados reais, layout compartilhado ([admin specs](../admin-routeXflow/specs/README.md)).
-3. **Decidir e registrar** (ADR): onde roda o Route Engine; Kotlin nativo; Bluetooth RFCOMM × BLE; provedor de geocoding.
-4. **Modelar** status de oferta/delivery e ajustar `Deliveries`/`DeliveryStop`/`GpsPosition` (G-07, G-18, G-19).
-5. **Implementar** endpoints de oferta/decisão/delivery/GPS em lote.
-6. **App Android**: identidade RTXF, sincronização Bluetooth, captura por Accessibility (iFood e 99Food primeiro).
-7. **Route Engine v1** com fixtures do exemplo da seção 8.
-8. **MarketPlace** (Shoppe/Uber): estudo de viabilidade da baixa automática antes de especificar.
-9. **Testes e CI**; otimizar consultas/índices só após medir uso real.
 
 ## Questões de negócio a validar
 * Aceite automático via acessibilidade pode violar termos das plataformas (risco de banimento) — validar antes de automatizar toques.
