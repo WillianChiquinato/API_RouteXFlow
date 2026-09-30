@@ -8,7 +8,8 @@ namespace API_RouteXFlow.Domain.Data.Entities;
 public enum TypeStops
 {
     Pickup = 1,
-    Delivery = 2
+    Delivery = 2,
+    Package = 3
 }
 
 [Table("delivery_stop")]

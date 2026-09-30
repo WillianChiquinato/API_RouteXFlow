@@ -16,6 +16,12 @@ public class RoutePositionStops : BaseEntity
 
     [ForeignKey(nameof(GpsPositionId))]
     public GpsPositionHistory? GpsPosition { get; set; }
+    
+    [Column("status_stop")]
+    public int StatusStopId { get; set; }
+    
+    [ForeignKey(nameof(StatusStopId))]
+    public Status? StatusStop { get; set; }
 
     [Column("sequence")]
     public int Sequence { get; set; }

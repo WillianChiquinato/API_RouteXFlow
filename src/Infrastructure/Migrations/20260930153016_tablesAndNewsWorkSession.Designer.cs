@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260930153016_tablesAndNewsWorkSession")]
+    partial class tablesAndNewsWorkSession
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -579,11 +582,6 @@ namespace Infrastructure.Migrations
                         .HasColumnType("text")
                         .HasColumnName("address");
 
-                    b.Property<string>("AddressNumber")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("address_number");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -799,10 +797,6 @@ namespace Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("sequence");
 
-                    b.Property<int>("StatusStopId")
-                        .HasColumnType("integer")
-                        .HasColumnName("status_stop");
-
                     b.Property<int>("Type")
                         .HasColumnType("integer")
                         .HasColumnName("type");
@@ -816,8 +810,6 @@ namespace Infrastructure.Migrations
                     b.HasIndex("GpsPositionId");
 
                     b.HasIndex("RoutePositionId");
-
-                    b.HasIndex("StatusStopId");
 
                     b.ToTable("route_position_stop");
                 });
@@ -1198,17 +1190,9 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("API_RouteXFlow.Domain.Data.Entities.Status", "StatusStop")
-                        .WithMany()
-                        .HasForeignKey("StatusStopId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("GpsPosition");
 
                     b.Navigation("RoutePosition");
-
-                    b.Navigation("StatusStop");
                 });
 
             modelBuilder.Entity("API_RouteXFlow.Domain.Data.Entities.User", b =>

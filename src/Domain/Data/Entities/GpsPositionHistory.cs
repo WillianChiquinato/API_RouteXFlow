@@ -29,4 +29,7 @@ public class GpsPositionHistory : BaseEntity
 
     [Column("address")]
     public string Address { get; set; } = string.Empty;
+    
+    [Column("address_number")]
+    public string AddressNumber { get; set; } = string.Empty;
 }
