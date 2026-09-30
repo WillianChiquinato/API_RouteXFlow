@@ -147,10 +147,31 @@ NAVIGATION_MANAGER
 
 ---
 
-# 6. Tabelas de fluxo.
-# 6.1 Work Session
+# 6. Modelo de dados e tabelas de fluxo
 
-Uma `WorkSession` representa um período de trabalho do entregador.
+Legenda: ✅ implementado (entidade + uso no código) · 🟡 entidade existe, mas sem fluxo/endpoint ainda · ⏳ ainda não modelado.
+
+Toda entidade herda de `BaseEntity` (`Id`, `CreatedAt`, `UpdatedAt`). Visão geral das relações:
+
+```text
+User
+ ├── Container ──< ContainerDevices >── Device
+ ├── WorkSession ── (ContainerId) ──▶ Container
+ │     ├── GpsPositionHistory                (N posições)
+ │     └── DeliveryOffers                    (N ofertas detectadas na sessão)
+ │           ├── DeliveryStops               (N stops ordenados por Sequence)
+ │           ├── RouteEvaluation             (avaliação da oferta)
+ │           └── Deliveries                  (só existe se a oferta foi ACEITA)
+ ├── FinanceEntry                            (N lançamentos)
+ └── FinanceMonthClosure                     (1 por mês)
+
+Status  → tabela genérica (seed) usada por DeliveryOffers e Deliveries
+Apps    → plataformas (iFood, 99Food...) referenciadas por DeliveryOffers.AppId
+```
+
+## 6.1 WorkSession
+
+Uma `WorkSession` representa um período de trabalho do entregador (uma "corrida" no Admin).
 
 ```text
 User
@@ -161,29 +182,42 @@ WorkSession
         └── Device Navigation  (Celular B)
 ```
 
+Campos: `UserId`, `ContainerId`, `State` (`StateSession`), `StartTime`, `EndTime?`.
+
+`StateSession`: `Aberto (0)` · `Trabalhando (1)` · `Finalizado (2)` · `Pausada (3)`.
+
 Regras vigentes:
 
-* Só **uma** sessão aberta e ativa por usuário.
-* Para iniciar: exatamente **um container ativo**, com um device `Manager` **e** um `Navigation` conectados.
-* Ao iniciar/finalizar grava-se uma posição GPS (`StartPosition` / `FinishedPosition`).
-* Estado da sessão: Iniciando-se em Aberto, porem sendo atualizada caso algo seja fora do comum ou finalizada (Troca o state e EndTime preenchida).
+* Só **uma** sessão aberta por usuário (`GetOpenWorkSessionAsync`) — senão "Já existe uma corrida em andamento".
+* Para iniciar: exatamente **um container ativo** do usuário, com um device `Manager` **e** um `Navigation` com `Connected = true`.
+* Ao iniciar grava `GpsPositionHistory` `StartPosition`; ao finalizar grava `FinishedPosition` (lat/long vêm no request).
+* Só o dono finaliza a sessão; sessão com `EndTime` preenchido não pode ser finalizada de novo.
 
----
+```text
+Aberto ──▶ Trabalhando ──▶ Finalizado (EndTime preenchido)
+              ↕
+           Pausada
+```
 
-# 6.2 Container e Device
+* `Aberto`: criada pelo start, ainda sem oferta/corrida.
+* `Trabalhando`: passou a receber ofertas/deliveries e rotas.
+* `Pausada`: entregador parou temporariamente (a sessão continua "aberta" para a regra de uma-por-usuário).
+* `Finalizado`: `finish` preenche `EndTime` e troca o state.
 
-* `Device`: celular com identidade própria (`DeviceIdentifier`) e tipo `Manager` (Celular A) ou `Navigation` (Celular B).
-* `Container`: agrupa o par de celulares e pode estar ativo/inativo.
-* Vínculo em `ContainerDevices` (`PairedAt`, `LastConnectedAt`, `IsActive`).
+## 6.2 Container e Device
 
-# 6.3 DeliveryOffer
+* `Device`: celular com identidade própria (`DeviceIdentifier`, ex.: `RTXF-8F3A2C91` — nunca o MAC), `Name`, `Type` (`Manager` = Celular A, `Navigation` = Celular B, `Other`) e `Connected` (estado de conexão atual).
+* `Container`: agrupa o par de celulares do usuário (`Name`, `UserId`, `IsActive`).
+* `ContainerDevices`: vínculo N:N (`ContainerId`, `DeviceId`, `PairedAt`, `LastConnectedAt`, `IsActive`).
+* Um usuário pode ter vários containers, mas **só um ativo** por vez para iniciar sessão.
+
+## 6.3 DeliveryOffers
 
 Oferta que apareceu numa plataforma. **Detectar ≠ aceitar.**
 
 Ciclo alvo: `DETECTED → ANALYZED → ACCEPTED | REJECTED | EXPIRED`.
-Estado atual: tabela e leitura no detalhe da sessão existem; (usa a tabela genérica `status`).
 
-# 6.4 DeliveryStop
+## 6.4 DeliveryStops
 
 Ponto pertencente a uma oferta. Uma oferta tem **N** stops, ordenados por `Sequence`.
 
@@ -195,15 +229,17 @@ Offer
  └── Stop 4 - DELIVERY    (Sequence 4)
 ```
 
-Necessário porque os deliveries pode ter múltiplas coletas e/ou entregas na mesma oferta.
+Necessário porque os deliveries podem ter múltiplas coletas e/ou entregas na mesma oferta.
 
-# 6.5 RouteEvaluation
+Pontos de atenção: `Latitude`/`Longitude` estão padronizados como string, pois a coordenada pode ainda não ter sido geocodificada (seção 14: endereço vem antes da coordenada). O `Sequence` é a ordem **proposta pela plataforma**; a ordem final da rota é decidida pelo Route Engine.
 
-Análise da oferta considerando a rota atual: `recommended`, distância adicional, tempo adicional, desvio, valor por km, score e comentário. Valor/hora **não é persistido** (calculado sob demanda).
+## 6.5 RouteEvaluation
 
-IMPORTANTE: a avaliação **não** é a decisão do usuário — só ajuda a decidir.
+Análise da oferta considerando a rota atual. Campos: `DeliveryOfferId`, `Recommended`, `AdditionalDistanceKm`, `AdditionalTimeMinutes`, `RouteDeviationKm`, `ValuePerKm`, `EvaluationScore`, `Comments`. Valor/hora **não é persistido** (calculado sob demanda).
 
-# 6.6 Delivery
+IMPORTANTE: a avaliação **não** é a decisão do usuário — só ajuda a decidir. Ela é gerada pelo Route Engine (seção 15) e pode ser recalculada quando a rota muda; hoje a relação com a oferta permite várias avaliações por oferta (definir se guarda histórico ou só a última).
+
+## 6.6 Deliveries
 
 Oferta efetivamente aceita.
 
@@ -212,20 +248,46 @@ DeliveryOffer ──(ACCEPTED)──▶ Delivery (ACTIVE)
 DeliveryOffer ──(REJECTED / EXPIRED)──▶ (nenhuma Delivery)
 ```
 
-# 6.7 Finance
+* Relação 1:1 com a oferta (uma oferta aceita gera **uma** Delivery).
+* Os stops da Delivery são os da oferta (`DeliveryStops`); não duplicar.
+* Distância/duração **reais** ficam aqui; as **estimadas** ficam na oferta — permite comparar previsto × realizado.
 
-`FinanceEntry` (ganho/gasto, manual ou `resgate`) e `FinanceMonthClosure` (fechamento mensal único por usuário/mês). Inclui relatório de análise por IA (Groq) sobre dados **agregados**.
+## 6.7 GpsPositionHistory
+
+Tabela da localização do registro.
+
+### 6.7.1 RoutePosition
+
+Tabela que guarda a rota com o id do gpsPosition (Identificação de origin location e destination location, para fazer o rastreio no Front) com type pois será para delivery (Order / sequence setado manualmente via APP) e Marketplace Pacotes (Otimizado para criação de rotas).
+
+### 6.7.2 RoutePositionStops
+
+Tabela de paradas para cada rota desenhada.
+
+## 6.8 Finance
+
+`FinanceEntry` (`UserId`, `Type` earning/expense, `Source` manual/resgate, `Category`, `Description`, `Amount`, `Date`) e `FinanceMonthClosure` (`UserId`, `Month`, `Year`, `ClosedAt`, `TotalEarnings`, `TotalExpenses`, `Balance`; índice único por usuário/ano/mês). Inclui relatório de análise por IA (Groq) sobre dados **agregados**.
+
+O `Source = resgate` é o gancho futuro para lançar ganhos automaticamente a partir de `Deliveries` concluídas (hoje é lançamento manual).
+
+## 6.9 Tabelas de apoio
+
+* `Apps`: plataformas (seed: iFood, 99Food, Keeta = Delivery; Shoppe, Mercado Livre = MarketPlace); `AppsVinculatedUser` liga o usuário aos apps que ele usa.
+* `Status`: tabela genérica de status (seed 11–20).
+* `User` / `Role`: autenticação e perfis (Super-Admin, Admin, Operação).
 
 ---
 
-# 7. Fluxo de uma nova corrida (Delivery) ⏳
+# 7. Fluxo de uma nova corrida (Delivery)
+
+Pré-condição: existe uma `WorkSession` aberta (seção 6.1) e os dois celulares estão conectados por Bluetooth (seção 5).
 
 ```text
 iFood / 99Food
         ↓
 AccessibilityService        (Celular A)
         ↓
-Captura da oferta
+Captura da oferta           (texto bruto → RawData)
         ↓
 Normalização → DeliveryOffer + DeliveryStops (modelo neutro, independente da plataforma)
         ↓
@@ -238,40 +300,33 @@ Navigation Manager          (Celular B)
 Usuário decide → ACCEPTED (cria Delivery) | REJECTED | EXPIRED
 ```
 
-Exemplo completo:
+# 8. Fluxo de rota (MarketPlace)
 
-* Existe a `WorkSession S1` e a `Delivery D1` (99Food) ativa.
-* Aparece a oferta `O2` (iFood, R$ 13,00) com 1 pickup e 1 delivery.
-* O Route Engine considera: GPS atual + rota atual + D1 + stops de D1 + O2.
-* Resultado `E1`: +1,2 km, +5 min, R$ 10,83/km, `Recommended = true`.
-* O resultado vai por Bluetooth ao Navigation Manager. Se o usuário aceitar: `O2 ACCEPTED → D2 ACTIVE`.
-* Agora há D1 e D2 ativas; o Route Engine considera ambas nas próximas avaliações.
-
-Spec: [specs/backend/features/offers-route-engine.md](specs/backend/features/offers-route-engine.md).
-
----
-
-# 10. GPS ⏳ (histórico 🟡)
-
-* O celular de navegação (B) fornece a posição atual.
-* A posição **atual** é estado de tempo real: memória/Redis — **nunca** um `UPDATE` no Postgres a cada leitura.
-* O Postgres guarda o **histórico amostrado**.
+Pré-condição: existe uma `WorkSession` aberta (seção 6.1) e pelo menos um celular conectado por Bluetooth (seção 5).
 
 ```text
-GpsPosition (tabela gps_position)
--------------------------
-WorkSessionId
-TypePosition   (Start | Route | Finished)
-Latitude / Longitude
-Timestamp
-(a adicionar: Speed, Accuracy)
+Shoppe / Mercado Livre
+        ↓
+Estabele conexão com as contas dos fornecedores (Faz login na shoppe e no Mercado livre por exemplo)
+        ↓
+Coleta todos os endereços.
+        ↓
+Normalização de localizações
+        ↓
+Route Engine → Optimization Location with start and finished location
+        ↓
+Bluetooth
+        ↓
+Mostra a rota com os pacotes organizados e enumerados, com opção de detectação de pacote.
+        ↓
+Usuário aceita a corrida ou reotimiza
+        ↓
+Quando o usuário der baixa no sistema routeXFlow, sera consultado no fornecedor e a baixa será automatica.
 ```
-
-Hoje só `StartPosition` e `FinishedPosition` são gravadas (no start/finish da sessão).
 
 ---
 
-# 11. Redis ⏳
+# 9. Redis ⏳
 
 **Ainda não integrado** (não está no código nem no `docker-compose`). Será introduzido quando o Route Engine precisar de estado de tempo real no back — se ele rodar no Android (recomendação em aberto), talvez nem seja necessário no MVP.
 
