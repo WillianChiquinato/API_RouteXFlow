@@ -89,4 +89,57 @@ public class UserRepository : IUserRepository
         _dbContext.Users.Update(user);
         return await _dbContext.SaveChangesAsync() > 0;
     }
+
+    public async Task<bool> SavePasswordResetTokenAsync(int userId, string resetToken)
+    {
+        if (string.IsNullOrWhiteSpace(resetToken))
+            return false;
+
+        _dbContext.EmailCodes.Add(new EmailCode
+        {
+            UserId = userId,
+            Code = resetToken,
+            ExpirationTime = DateTime.UtcNow.AddMinutes(15),
+            CreatedAt = DateTime.UtcNow
+        });
+
+        return await _dbContext.SaveChangesAsync() > 0;
+    }
+
+    public async Task<bool> UpdateUserPasswordAsync(User user, string newPassword)
+    {
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        _dbContext.Users.Update(user);
+
+        return await _dbContext.SaveChangesAsync() > 0;
+    }
+
+    public async Task<User?> GetUserByResetTokenAsync(string resetToken)
+    {
+        var emailCode = await _dbContext.EmailCodes
+            .AsNoTracking()
+            .Where(x => x.Code == resetToken && x.ExpirationTime > DateTime.UtcNow)
+            .FirstOrDefaultAsync();
+
+        if (emailCode == null)
+            return null;
+
+        return await _dbContext.Users
+            .AsNoTracking()
+            .Where(x => x.Id == emailCode.UserId)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<bool> InvalidateResetTokenAsync(int userId)
+    {
+        var emailCode = await _dbContext.EmailCodes
+            .Where(x => x.UserId == userId)
+            .FirstOrDefaultAsync();
+
+        if (emailCode == null)
+            return false;
+
+        _dbContext.EmailCodes.Remove(emailCode);
+        return await _dbContext.SaveChangesAsync() > 0;
+    }
 }

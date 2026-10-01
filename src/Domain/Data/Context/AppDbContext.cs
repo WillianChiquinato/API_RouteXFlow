@@ -27,6 +27,8 @@ public class AppDbContext : DbContext
     public DbSet<Deliveries> Deliveries { get; set; }
     public DbSet<FinanceEntry> FinanceEntries { get; set; }
     public DbSet<FinanceMonthClosure> FinanceMonthClosures { get; set; }
+    public DbSet<Status> Statuses { get; set; }
+    public DbSet<EmailCode> EmailCodes { get; set; }
 
     public override int SaveChanges()
     {

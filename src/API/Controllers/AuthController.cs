@@ -101,6 +101,33 @@ public class AuthController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost]
+    [Route("forgot-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
+    {
+        var result = await _authService.ForgotPasswordAsync(request);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet]
+    [Route("validate-reset-token")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ValidateResetToken([FromQuery] string token)
+    {
+        var result = await _authService.ValidateResetTokenAsync(token);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpPost]
+    [Route("reset-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
+    {
+        var result = await _authService.ResetPasswordAsync(request);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
     private string GetToken()
     {
         if (Request.Cookies.TryGetValue(TokenService.AuthCookieName, out var cookieToken))

@@ -11,4 +11,8 @@ public interface IUserRepository
     Task<bool> UpdatePreferenceAsync(Preferences preferencesUser);
     Task<User?> GetUserByEmailAsync(string email);
     Task<bool> UpdateUserAsync(User user);
+    Task<bool> SavePasswordResetTokenAsync(int userId, string resetToken);
+    Task<bool> UpdateUserPasswordAsync(User user, string newPassword);
+    Task<User?> GetUserByResetTokenAsync(string resetToken);
+    Task<bool> InvalidateResetTokenAsync(int userId);
 }
