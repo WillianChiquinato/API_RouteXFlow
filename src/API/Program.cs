@@ -19,8 +19,6 @@ if (builder.Environment.IsProduction())
     builder.WebHost.UseUrls("http://0.0.0.0:8080");
 }
 
-var allowedCorsOrigins = ResolveAllowedCorsOrigins(builder.Configuration);
-
 var connectionString =
     $"Host={Environment.GetEnvironmentVariable("DB_SERVER")};" +
     $"Port={Environment.GetEnvironmentVariable("DB_PORT")};" +
@@ -30,19 +28,6 @@ var connectionString =
     $"Ssl Mode={Environment.GetEnvironmentVariable("DB_SSL")};";
 
 
-builder.Services.AddCors(options =>
-{
-    // [SEC] restrict CORS to known frontend origin
-    options.AddPolicy("AllowFrontend",
-        policy => policy
-            .WithOrigins(allowedCorsOrigins)
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials());
-});
-
-builder.Services.AddControllers();
-builder.Services.AddSignalR();
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
@@ -140,8 +125,13 @@ builder.Services.AddSingleton<IAmazonS3>(_ => new AmazonS3Client(storageAccessKe
     UseHttp = storageEndpoint.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
 }));
 
-builder.Services.AddProjectDependencies();
-builder.Services.AddHttpClient();
+builder.Services.AddControllers();
+
+builder.Services
+    .AddPresentation(builder.Configuration, builder.Environment)
+    .AddHttpClient()
+    .AddAuthorization()
+    .AddProjectDependencies();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -189,7 +179,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 var app = builder.Build();
 
 app.UseForwardedHeaders();
-app.UseCors("AllowFrontend");
+app.UseCors(CorsExtensions.AllowRouteXFlowPolicy);
 
 using (var scope = app.Services.CreateScope())
 {
@@ -214,28 +204,6 @@ static IResult ApiHealthResponse() => Results.Ok("API Running");
 
 app.MapGet("/", ApiHealthResponse);
 
-static string[] ResolveAllowedCorsOrigins(ConfigurationManager configuration)
-{
-    var configuredOrigins = configuration
-        .GetSection("Cors:AllowedOrigins")
-        .Get<string[]>() ?? Array.Empty<string>();
-
-    var legacyOrigin = configuration["Cors:AllowedOrigin"];
-    if (!string.IsNullOrWhiteSpace(legacyOrigin))
-    {
-        configuredOrigins = configuredOrigins.Append(legacyOrigin).ToArray();
-    }
-
-    var normalizedOrigins = configuredOrigins
-        .Where(origin => !string.IsNullOrWhiteSpace(origin))
-        .Select(origin => origin.Trim().TrimEnd('/'))
-        .Distinct(StringComparer.OrdinalIgnoreCase)
-        .ToArray();
-
-    return normalizedOrigins.Length > 0
-        ? normalizedOrigins
-        : ["http://localhost:3000"];
-}
 app.UsePresentation(builder.Environment);
 
 app.Run();

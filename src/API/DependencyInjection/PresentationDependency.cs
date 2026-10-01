@@ -1,5 +1,8 @@
 using System.Text;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.Extensions.Hosting;
 
 public static class PresentationDependencyInjection
 {
@@ -12,6 +15,25 @@ public static class PresentationDependencyInjection
     public static bool ShouldRequireSwaggerBasicAuth(IHostEnvironment environment)
     {
         return environment.IsStaging();
+    }
+
+    public static IServiceCollection AddPresentation(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        IHostEnvironment environment)
+    {
+        services.AddEndpointsApiExplorer();
+        services.AddRouteXFlowCors(configuration);
+
+        services.AddRequestTimeouts(options =>
+        {
+            options.DefaultPolicy = new Microsoft.AspNetCore.Http.Timeouts.RequestTimeoutPolicy
+            {
+                Timeout = TimeSpan.FromSeconds(600)
+            };
+        });
+
+        return services;
     }
 
     public static WebApplication UsePresentation(this WebApplication app, IHostEnvironment environment)
