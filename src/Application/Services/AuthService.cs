@@ -157,8 +157,7 @@ public class AuthService : IAuthService
                 return CustomResponse<string>.Fail("Token de redefinição inválido ou expirado.");
             }
 
-            var hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-            var passwordUpdated = await _userRepository.UpdateUserPasswordAsync(user, hashedPassword);
+            var passwordUpdated = await _userRepository.UpdateUserPasswordAsync(user, request.NewPassword);
 
             if (!passwordUpdated)
             {
