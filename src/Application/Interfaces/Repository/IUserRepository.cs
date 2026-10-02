@@ -15,4 +15,9 @@ public interface IUserRepository
     Task<bool> UpdateUserPasswordAsync(User user, string newPassword);
     Task<User?> GetUserByResetTokenAsync(string resetToken);
     Task<bool> InvalidateResetTokenAsync(int userId);
+    Task<bool> SaveEmailVerificationCodeAsync(int userId, string code);
+    Task<EmailCode?> GetEmailVerificationCodeAsync(int userId);
+    Task<bool> RemoveEmailCodeAsync(EmailCode emailCode);
+    Task<bool> RegisterEmailCodeAttemptAsync(EmailCode emailCode);
+    Task<bool> MarkEmailVerifiedAsync(int userId);
 }

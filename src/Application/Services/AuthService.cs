@@ -12,12 +12,14 @@ public class AuthService : IAuthService
     private readonly TokenService _tokenService;
     private readonly IUserRepository _userRepository;
     private readonly IEmailService _emailService;
+    private readonly IEmailVerificationService _emailVerificationService;
 
-    public AuthService(TokenService tokenService, IUserRepository userRepository, IEmailService emailService)
+    public AuthService(TokenService tokenService, IUserRepository userRepository, IEmailService emailService, IEmailVerificationService emailVerificationService)
     {
         _tokenService = tokenService;
         _userRepository = userRepository;
         _emailService = emailService;
+        _emailVerificationService = emailVerificationService;
     }
 
     public async Task<CustomResponse<string>> ForgotPasswordAsync(ForgotPasswordRequest request)
@@ -88,6 +90,11 @@ public class AuthService : IAuthService
                 return CustomResponse<string>.Fail("E-mail ou senha inválidos.");
             }
 
+            if (!user.EmailVerified)
+            {
+                return new CustomResponse<string>(false, new List<string> { "Verifique seu e-mail antes de entrar." }, AuthResultCodes.EmailNotVerified);
+            }
+
             var userComposeDTO = new UserComposeDTO
             {
                 Id = user.Id,
@@ -102,6 +109,28 @@ public class AuthService : IAuthService
         {
             return CustomResponse<string>.Fail($"An error occurred during login: {ex.Message}");
         }
+    }
+
+    public async Task<CustomResponse<string>> VerifyEmailAsync(VerifyEmailRequest request)
+    {
+        var verified = await _emailVerificationService.VerifyAsync(request.Email, request.Code);
+        if (!verified.Success || verified.Result is null)
+            return CustomResponse<string>.Fail(verified.Errors.ToArray());
+
+        var user = verified.Result;
+        var token = await _tokenService.GenerateTokenAsync(new UserComposeDTO
+        {
+            Id = user.Id,
+            Name = user.Username,
+            Email = user.Email
+        });
+
+        return CustomResponse<string>.SuccessTrade(token);
+    }
+
+    public async Task<CustomResponse<bool>> ResendVerificationAsync(ResendVerificationRequest request)
+    {
+        return await _emailVerificationService.ResendCodeAsync(request.Email);
     }
 
     public async Task<CustomResponse<string>> RefreshAsync(string token)

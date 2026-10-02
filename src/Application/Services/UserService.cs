@@ -12,12 +12,14 @@ public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
     private readonly IAppRepository _appRepository;
+    private readonly IEmailVerificationService _emailVerificationService;
     private readonly ILogger<UserService> _logger;
 
-    public UserService(IUserRepository userRepository, IAppRepository appRepository, ILogger<UserService> logger)
+    public UserService(IUserRepository userRepository, IAppRepository appRepository, IEmailVerificationService emailVerificationService, ILogger<UserService> logger)
     {
         _userRepository = userRepository;
         _appRepository = appRepository;
+        _emailVerificationService = emailVerificationService;
         _logger = logger;
     }
 
@@ -38,7 +40,7 @@ public class UserService : IUserService
             }
 
             var getUserExistenceResponse = await _userRepository.GetAllUsersAsync(userRegisterRequest.Email);
-            if (getUserExistenceResponse.Count > 1)
+            if (getUserExistenceResponse.Count > 0)
             {
                 _logger.LogError("Ja existe um registro cadastrado com esse Email ou CPF");
                 return new CustomResponse<bool>(false, new List<string> { "Já existe um registro cadastrado com esse Email ou CPF." }, false);
@@ -51,7 +53,15 @@ public class UserService : IUserService
             {
                 return new CustomResponse<bool>(false, new List<string>{ "Erro ao vincular Apps" }, false);
             }
-            
+
+            var user = await _userRepository.GetUserByIdAsync(userRep);
+            if (user is not null)
+            {
+                var codeSent = await _emailVerificationService.SendCodeAsync(user);
+                if (!codeSent.Success)
+                    _logger.LogWarning("Cadastro {UserId} criado, mas o código de verificação não foi enviado", userRep);
+            }
+
             return new CustomResponse<bool>(true, new List<string>(), userRep > 0);
         }
         catch (Exception e)

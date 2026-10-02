@@ -8,6 +8,8 @@ public interface IAuthService
 {
     Task<CustomResponse<string>> LoginAsync(LoginRequest request);
     Task<CustomResponse<string>> RefreshAsync(string token);
+    Task<CustomResponse<string>> VerifyEmailAsync(VerifyEmailRequest request);
+    Task<CustomResponse<bool>> ResendVerificationAsync(ResendVerificationRequest request);
     Task<CustomResponse<User>> SearchUserByIdAsync(int userId);
     Task<CustomResponse<string>> ForgotPasswordAsync(ForgotPasswordRequest request);
     Task<CustomResponse<string>> ResetPasswordAsync(ResetPasswordRequest request);

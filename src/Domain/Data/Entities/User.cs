@@ -21,6 +21,9 @@ public class User : BaseEntity
     [Column("password_hash")]
     public string PasswordHash { get; set; } = string.Empty;
 
+    [Column("email_verified")]
+    public bool EmailVerified { get; set; }
+
     [Column("role_id")]
     public int RoleId { get; set; }
 

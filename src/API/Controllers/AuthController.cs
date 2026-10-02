@@ -76,6 +76,29 @@ public class AuthController : ControllerBase
         return Ok(new CustomResponse<MeResponse>(true, new List<string>(), me));
     }
 
+
+    [HttpPost]
+    [Route("verify-email")]
+    [AllowAnonymous]
+    public async Task<IActionResult> VerifyEmail(VerifyEmailRequest request)
+    {
+        var auth = await _authService.VerifyEmailAsync(request);
+
+        if (auth.Success && auth.Result is not null)
+            _tokenService.AppendAuthCookie(Response, auth.Result, Request.IsHttps);
+
+        return auth.Success ? Ok(auth) : BadRequest(auth);
+    }
+
+    [HttpPost]
+    [Route("resend-verification")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResendVerification(ResendVerificationRequest request)
+    {
+        var result = await _authService.ResendVerificationAsync(request);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
     [HttpPost]
     [Route("refresh")]
     [AllowAnonymous]

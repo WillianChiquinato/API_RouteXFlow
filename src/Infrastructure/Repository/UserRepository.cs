@@ -47,6 +47,7 @@ public class UserRepository : IUserRepository
             PhoneNumber = userRegisterRequest.PhoneNumber.Trim(),
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(userRegisterRequest.Password),
             RoleId = userRegisterRequest.RoleId,
+            EmailVerified = false,
             CreatedAt = DateTime.UtcNow,
             Preferences = { new Preferences() }
         };
@@ -99,6 +100,7 @@ public class UserRepository : IUserRepository
         {
             UserId = userId,
             Code = resetToken,
+            Purpose = EmailCodePurpose.PasswordReset,
             ExpirationTime = DateTime.UtcNow.AddMinutes(15),
             CreatedAt = DateTime.UtcNow
         });
@@ -118,7 +120,7 @@ public class UserRepository : IUserRepository
     {
         var emailCode = await _dbContext.EmailCodes
             .AsNoTracking()
-            .Where(x => x.Code == resetToken && x.ExpirationTime > DateTime.UtcNow)
+            .Where(x => x.Purpose == EmailCodePurpose.PasswordReset && x.Code == resetToken && x.ExpirationTime > DateTime.UtcNow)
             .FirstOrDefaultAsync();
 
         if (emailCode == null)
@@ -133,13 +135,64 @@ public class UserRepository : IUserRepository
     public async Task<bool> InvalidateResetTokenAsync(int userId)
     {
         var emailCode = await _dbContext.EmailCodes
-            .Where(x => x.UserId == userId)
+            .Where(x => x.UserId == userId && x.Purpose == EmailCodePurpose.PasswordReset)
             .FirstOrDefaultAsync();
 
         if (emailCode == null)
             return false;
 
         _dbContext.EmailCodes.Remove(emailCode);
+        return await _dbContext.SaveChangesAsync() > 0;
+    }
+
+    public async Task<bool> SaveEmailVerificationCodeAsync(int userId, string code)
+    {
+        // Só vale o último código enviado: os anteriores são descartados.
+        var previous = await _dbContext.EmailCodes
+            .Where(x => x.UserId == userId && x.Purpose == EmailCodePurpose.EmailVerification)
+            .ToListAsync();
+        _dbContext.EmailCodes.RemoveRange(previous);
+
+        _dbContext.EmailCodes.Add(new EmailCode
+        {
+            UserId = userId,
+            Code = code,
+            Purpose = EmailCodePurpose.EmailVerification,
+            ExpirationTime = DateTime.UtcNow.AddMinutes(15),
+            CreatedAt = DateTime.UtcNow
+        });
+
+        return await _dbContext.SaveChangesAsync() > 0;
+    }
+
+    public async Task<EmailCode?> GetEmailVerificationCodeAsync(int userId)
+    {
+        return await _dbContext.EmailCodes
+            .Where(x => x.UserId == userId && x.Purpose == EmailCodePurpose.EmailVerification)
+            .OrderByDescending(x => x.CreatedAt)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<bool> RemoveEmailCodeAsync(EmailCode emailCode)
+    {
+        _dbContext.EmailCodes.Remove(emailCode);
+        return await _dbContext.SaveChangesAsync() > 0;
+    }
+
+    public async Task<bool> RegisterEmailCodeAttemptAsync(EmailCode emailCode)
+    {
+        emailCode.Attempts++;
+        _dbContext.EmailCodes.Update(emailCode);
+        return await _dbContext.SaveChangesAsync() > 0;
+    }
+
+    public async Task<bool> MarkEmailVerifiedAsync(int userId)
+    {
+        var user = await _dbContext.Users.FirstOrDefaultAsync(x => x.Id == userId);
+        if (user == null)
+            return false;
+
+        user.EmailVerified = true;
         return await _dbContext.SaveChangesAsync() > 0;
     }
 }

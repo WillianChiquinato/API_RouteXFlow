@@ -29,6 +29,7 @@ public class AppDbContext : DbContext
     public DbSet<FinanceMonthClosure> FinanceMonthClosures { get; set; }
     public DbSet<Status> Statuses { get; set; }
     public DbSet<EmailCode> EmailCodes { get; set; }
+    public DbSet<SubAccount> SubAccounts { get; set; }
 
     public override int SaveChanges()
     {
@@ -96,6 +97,8 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<FinanceEntry>().Property(e => e.Source).HasConversion<string>();
         modelBuilder.Entity<FinanceEntry>().Property(e => e.Category).HasConversion<string>();
         modelBuilder.Entity<FinanceEntry>().HasIndex(e => new { e.UserId, e.Date });
+
+        modelBuilder.Entity<SubAccount>().HasIndex(s => s.Username).IsUnique();
 
         modelBuilder.Entity<FinanceMonthClosure>().HasIndex(c => new { c.UserId, c.Year, c.Month }).IsUnique();
 

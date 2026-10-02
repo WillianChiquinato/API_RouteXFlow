@@ -21,3 +21,9 @@ public class CustomResponse<T>
     public static CustomResponse<T> Fail(params string[] errors) =>
         new(false, errors.ToList(), default);
 }
+
+
+public static class AuthResultCodes
+{
+    public const string EmailNotVerified = "email_not_verified";
+}
