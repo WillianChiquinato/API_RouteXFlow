@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261006191407_oauthIntegrationAndStates")]
+    partial class oauthIntegrationAndStates
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -837,64 +840,6 @@ namespace Infrastructure.Migrations
                     b.ToTable("preferences");
                 });
 
-            modelBuilder.Entity("API_RouteXFlow.Domain.Data.Entities.ProfilesExternal", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("CountryId")
-                        .HasColumnType("text")
-                        .HasColumnName("country_id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("Email")
-                        .HasColumnType("text")
-                        .HasColumnName("email");
-
-                    b.Property<string>("ExternalUserId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("external_user_id");
-
-                    b.Property<string>("Nickname")
-                        .HasColumnType("text")
-                        .HasColumnName("nickname");
-
-                    b.Property<string>("Permalink")
-                        .HasColumnType("text")
-                        .HasColumnName("permalink");
-
-                    b.Property<string>("Provider")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("provider");
-
-                    b.Property<string>("SiteId")
-                        .HasColumnType("text")
-                        .HasColumnName("site_id");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("profiles_external");
-                });
-
             modelBuilder.Entity("API_RouteXFlow.Domain.Data.Entities.Role", b =>
                 {
                     b.Property<int>("Id")
@@ -1493,17 +1438,6 @@ namespace Infrastructure.Migrations
                 {
                     b.HasOne("API_RouteXFlow.Domain.Data.Entities.User", "User")
                         .WithMany("Preferences")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("API_RouteXFlow.Domain.Data.Entities.ProfilesExternal", b =>
-                {
-                    b.HasOne("API_RouteXFlow.Domain.Data.Entities.User", "User")
-                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

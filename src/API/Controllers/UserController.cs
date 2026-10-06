@@ -61,6 +61,16 @@ public class UserController : ControllerBase
         return response.Success ? Ok(response) : BadRequest(response);
     }
 
+    [HttpGet]
+    [Route("profile")]
+    public async Task<IActionResult> GetProfile()
+    {
+        if (!TryGetUserId(out var userId)) return Unauthorized();
+        
+        var response = await _userService.GetProfileAsync(userId);
+        return response.Success ? Ok(response) : BadRequest(response);
+    }
+
     private bool TryGetUserId(out int userId)
     {
         var claim = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");

@@ -39,6 +39,12 @@ builder.Services.AddScoped<TokenService>();
 builder.Services.AddHttpClient("RouteXFlowApi")
     .ConfigureHttpClient(c => c.Timeout = TimeSpan.FromSeconds(2));
 
+builder.Services.AddHttpClient("MercadoLivre", client =>
+{
+    client.BaseAddress = new Uri("https://api.mercadolibre.com/");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
 builder.Services.AddHttpClient("Groq", client =>
 {
     client.BaseAddress = new Uri("https://api.groq.com/openai/v1/");

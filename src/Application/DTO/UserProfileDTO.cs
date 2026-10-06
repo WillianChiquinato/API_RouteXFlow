@@ -44,3 +44,25 @@ public class UserPreferencesDTO
         FuelUnit = preferences.FuelUnit,
     };
 }
+
+public class ProfileExternalDTO
+{
+    public string ExternalUserId { get; set; } = string.Empty;
+    public string Provider { get; set; } = string.Empty;
+    public string? Nickname { get; set; }
+    public string? Email { get; set; }
+    public string? Permalink { get; set; }
+    public string? CountryId { get; set; }
+    public string? SiteId { get; set; }
+
+    public static ProfileExternalDTO From(ProfilesExternal profile) => new()
+    {
+        ExternalUserId = profile.ExternalUserId,
+        Provider = profile.Provider,
+        Nickname = profile.Nickname,
+        Email = profile.Email,
+        Permalink = profile.Permalink,
+        CountryId = profile.CountryId,
+        SiteId = profile.SiteId,
+    };
+}

@@ -190,4 +190,21 @@ public class UserService : IUserService
             throw;
         }
     }
+
+    public async Task<CustomResponse<ProfileExternalDTO>> GetProfileAsync(int userId)
+    {
+        try
+        {
+            var user = await _userRepository.GetProfileUserByIdAsync(userId);
+            if (user is null)
+                return CustomResponse<ProfileExternalDTO>.Fail("Usuário não identificado.");
+
+            return CustomResponse<ProfileExternalDTO>.SuccessTrade(ProfileExternalDTO.From(user));
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Erro ao obter perfil do usuário {UserId}", userId);
+            throw;
+        }
+    }
 }

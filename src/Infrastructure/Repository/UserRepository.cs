@@ -195,4 +195,13 @@ public class UserRepository : IUserRepository
         user.EmailVerified = true;
         return await _dbContext.SaveChangesAsync() > 0;
     }
+
+    public async Task<ProfilesExternal?> GetProfileUserByIdAsync(int userId)
+    {
+        return await _dbContext.ProfilesExternals
+            .AsNoTracking()
+            .Where(x => x.UserId == userId)
+            .FirstOrDefaultAsync();
+    }
+
 }

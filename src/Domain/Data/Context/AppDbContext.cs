@@ -31,6 +31,11 @@ public class AppDbContext : DbContext
     public DbSet<EmailCode> EmailCodes { get; set; }
     public DbSet<SubAccount> SubAccounts { get; set; }
 
+    //Integrations
+    public DbSet<OAuthIntegration> OAuthIntegrations { get; set; }
+    public DbSet<OAuthState> OAuthStates { get; set; }
+    public DbSet<ProfilesExternal> ProfilesExternals { get; set; }
+
     public override int SaveChanges()
     {
         UpdateTimestamps();

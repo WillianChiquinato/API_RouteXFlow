@@ -20,4 +20,5 @@ public interface IUserRepository
     Task<bool> RemoveEmailCodeAsync(EmailCode emailCode);
     Task<bool> RegisterEmailCodeAttemptAsync(EmailCode emailCode);
     Task<bool> MarkEmailVerifiedAsync(int userId);
+    Task<ProfilesExternal?> GetProfileUserByIdAsync(int userId);
 }

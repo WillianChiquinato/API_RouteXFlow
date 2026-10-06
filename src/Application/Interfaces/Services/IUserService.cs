@@ -11,4 +11,5 @@ public interface IUserService
     Task<CustomResponse<UserProfileDTO>> UpdateProfileAsync(int userId, UpdateProfileRequest request);
     Task<CustomResponse<UserPreferencesDTO>> UpdatePreferencesAsync(int userId, UpdatePreferencesRequest request);
     Task<CustomResponse<bool>> ChangePasswordAsync(int userId, ChangePasswordRequest request);
+    Task<CustomResponse<ProfileExternalDTO>> GetProfileAsync(int userId);
 }
