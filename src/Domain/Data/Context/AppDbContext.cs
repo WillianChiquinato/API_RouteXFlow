@@ -30,6 +30,7 @@ public class AppDbContext : DbContext
     public DbSet<Status> Statuses { get; set; }
     public DbSet<EmailCode> EmailCodes { get; set; }
     public DbSet<SubAccount> SubAccounts { get; set; }
+    public DbSet<AuditLog> AuditLogs { get; set; }
 
     //Integrations
     public DbSet<OAuthIntegration> OAuthIntegrations { get; set; }
@@ -104,6 +105,10 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<FinanceEntry>().HasIndex(e => new { e.UserId, e.Date });
 
         modelBuilder.Entity<SubAccount>().HasIndex(s => s.Username).IsUnique();
+
+        modelBuilder.Entity<AuditLog>().HasIndex(a => a.TraceId);
+        modelBuilder.Entity<AuditLog>().HasIndex(a => a.UserId);
+        modelBuilder.Entity<AuditLog>().HasIndex(a => a.CreatedAt);
 
         modelBuilder.Entity<FinanceMonthClosure>().HasIndex(c => new { c.UserId, c.Year, c.Month }).IsUnique();
 

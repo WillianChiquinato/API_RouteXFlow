@@ -10,6 +10,8 @@ using Microsoft.IdentityModel.Tokens;
 using Infrastructure.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using API_RouteXFlow.Services;
+using API_RouteXFlow.Middleware;
+using Infrastructure.Audit;
 
 DotNetEnv.Env.Load();
 
@@ -117,7 +119,11 @@ builder.Services.AddRateLimiter(options =>
             }));
 });
 
-builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString, b => b.MigrationsAssembly("Infrastructure")));
+builder.Services.AddScoped<AuditTrail>();
+builder.Services.AddScoped<AuditSaveChangesInterceptor>();
+builder.Services.AddDbContext<AppDbContext>((sp, options) => options
+    .UseNpgsql(connectionString, b => b.MigrationsAssembly("Infrastructure"))
+    .AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptor>()));
 
 var storageEndpoint = Environment.GetEnvironmentVariable("STORAGE_ENDPOINT") ?? "http://localhost:8333";
 var storageAccessKey = Environment.GetEnvironmentVariable("STORAGE_ACCESS_KEY");
@@ -202,6 +208,7 @@ using (var scope = app.Services.CreateScope())
 app.UseRateLimiter();
 app.UseHttpsRedirection();
 app.UseAuthentication();
+app.UseMiddleware<AuditLogMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();
