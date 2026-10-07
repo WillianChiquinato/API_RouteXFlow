@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using API_RouteXFlow.Domain.Data.Entities;
 
 public class TokenResponse
 {
@@ -46,4 +47,7 @@ public class MercadoLivreUserResponse
 
     [JsonPropertyName("permalink")]
     public string? Permalink { get; set; }
+
+    [JsonPropertyName("apps")]
+    public Apps apps { get; set; } = new Apps();
 }

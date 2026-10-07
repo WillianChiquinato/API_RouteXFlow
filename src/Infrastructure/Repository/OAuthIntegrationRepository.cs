@@ -43,6 +43,7 @@ public class OAuthIntegrationRepository : IOAuthIntegrationRepository
     public async Task<OAuthIntegration?> GetIntegrationAsync(string provider, int userId)
     {
         return await _dbContext.OAuthIntegrations
+            .Include(i => i.ProviderApp)
             .FirstOrDefaultAsync(i => i.Provider == provider && i.UserId == userId);
     }
 

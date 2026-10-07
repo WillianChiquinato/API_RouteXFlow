@@ -101,6 +101,7 @@ public class MercadoLivreService : IMercadoLivreService
         var oauthIntegration = new OAuthIntegration
         {
             Provider = "MercadoLivre",
+            ProviderAppId = 5,
             AccessToken = tokenResponse.AccessToken,
             TokenType = tokenResponse.TokenType ?? string.Empty,
             ExpiresIn = tokenResponse.ExpiresIn,
@@ -151,6 +152,9 @@ public class MercadoLivreService : IMercadoLivreService
 
         if (user == null)
             return CustomResponse<MercadoLivreUserResponse>.Fail("Resposta inválida do Mercado Livre.");
+
+        if (integration.ProviderApp != null)
+            user.apps = integration.ProviderApp;
 
         var profileSaved = await _oauthIntegrationService.SaveExternalProfileAsync(new ProfilesExternal
         {

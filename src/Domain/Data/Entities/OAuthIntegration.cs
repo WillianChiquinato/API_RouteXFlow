@@ -10,6 +10,9 @@ public class OAuthIntegration : BaseEntity
     [Column("provider")]
     public string Provider { get; set; } = string.Empty;
 
+    [Column("provider_app_id")]
+    public int ProviderAppId { get; set; }
+
     [Column("access_token")]
     public string AccessToken { get; set; } = string.Empty;
 
@@ -28,7 +31,6 @@ public class OAuthIntegration : BaseEntity
     [Column("expires_at")]
     public DateTime ExpiresAt { get; set; }
 
-    // Usuário do RouteXFlow dono da integração.
     [Column("user_id")]
     public int UserId { get; set; }
 
@@ -38,4 +40,7 @@ public class OAuthIntegration : BaseEntity
 
     [Column("raw_data")]
     public string RawData { get; set; } = string.Empty;
+
+    [ForeignKey(nameof(ProviderAppId))]
+    public Apps? ProviderApp { get; set; }
 }
