@@ -17,11 +17,11 @@ public class ContainerService : IContainerService
         _logger = logger;
     }
 
-    public async Task<CustomResponse<List<ContainerToDevicesDTO>>> GetContainers()
+    public async Task<CustomResponse<List<ContainerToDevicesDTO>>> GetContainers(int userId)
     {
         try
         {
-            var containers = await _containerRepository.GetContainersAsync();
+            var containers = await _containerRepository.GetContainersAsync(userId);
 
             if (!containers.Any())
             {

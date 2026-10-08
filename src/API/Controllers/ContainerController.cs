@@ -22,7 +22,16 @@ public class ContainerController : ControllerBase
     [Route("getContainers")]
     public async Task<IActionResult> GetContainers()
     {
-        var containers = await _containerService.GetContainers();
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                     ?? User.FindFirstValue("sub");
+
+        if (string.IsNullOrEmpty(userId))
+        {
+            var response = new CustomResponse<string>(false, new List<string> { "Usuário não autenticado." }, null);
+            return Unauthorized(response);
+        }
+
+        var containers = await _containerService.GetContainers(int.Parse(userId));
 
         return containers.Result != null ? Ok(containers) : BadRequest(containers);
     }

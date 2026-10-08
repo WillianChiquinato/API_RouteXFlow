@@ -14,10 +14,11 @@ public class ContainerRepository : IContainerRepository
         _dbContext = dbContext;
     }
 
-    public async Task<List<ContainerToDevicesDTO>> GetContainersAsync()
+    public async Task<List<ContainerToDevicesDTO>> GetContainersAsync(int userId)
     {
         return await _dbContext.Containers
             .AsNoTracking()
+            .Where(c => c.UserId == userId)
             .Select(container => new ContainerToDevicesDTO
             {
                 Id = container.Id,

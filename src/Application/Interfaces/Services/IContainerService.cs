@@ -5,7 +5,7 @@ namespace API_RouteXFlow.Interfaces.Services;
 
 public interface IContainerService
 {
-    Task<CustomResponse<List<ContainerToDevicesDTO>>> GetContainers();
+    Task<CustomResponse<List<ContainerToDevicesDTO>>> GetContainers(int userId);
     Task<CustomResponse<bool>> RegisterAsync(ContainerRegisterRequest containerRegisterRequest, int userId);
     Task<CustomResponse<bool>> EditAsync(ContainerEditRequest containerEditRequest, int userId);
 }
