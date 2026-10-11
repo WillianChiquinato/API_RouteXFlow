@@ -1,7 +1,16 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace API_RouteXFlow.Domain.Data.Entities;
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum AccountType
+{
+    DeliveryAccount = 1,
+    MarketPlaceAccount = 2,
+    Guest = 3
+}
 
 [Table("user")]
 public class User : BaseEntity
@@ -20,9 +29,13 @@ public class User : BaseEntity
 
     [Column("password_hash")]
     public string PasswordHash { get; set; } = string.Empty;
+    
+    [Column("account_type")]
+    public AccountType AccountType { get; set; }
 
     [Column("email_verified")]
     public bool EmailVerified { get; set; }
+
 
     [Column("role_id")]
     public int RoleId { get; set; }

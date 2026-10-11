@@ -14,6 +14,13 @@ public class OAuthIntegrationRepository : IOAuthIntegrationRepository
         _dbContext = dbContext;
     }
 
+    // Uma conta externa só pode estar vinculada a um usuário da plataforma.
+    public async Task<bool> IsExternalAccountLinkedToOtherUserAsync(string provider, long externalUserId, int userId)
+    {
+        return await _dbContext.OAuthIntegrations
+            .AnyAsync(i => i.Provider == provider && i.ExternalUserId == externalUserId && i.UserId != userId);
+    }
+
     // Upsert por (provider, user_id): reautorizar substitui os tokens da integração existente.
     public async Task<bool> SaveOAuthIntegrationAsync(OAuthIntegration integration)
     {

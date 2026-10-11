@@ -51,3 +51,18 @@ public class MercadoLivreUserResponse
     [JsonPropertyName("apps")]
     public Apps apps { get; set; } = new Apps();
 }
+
+public class MercadoLivreWebhookRequest
+{
+    [JsonPropertyName("user_id")]
+    public long UserId { get; set; }
+
+    [JsonPropertyName("topic")]
+    public string? Topic { get; set; }
+
+    [JsonPropertyName("application_id")]
+    public long ApplicationId { get; set; }
+
+    [JsonPropertyName("sent")]
+    public DateTime Sent { get; set; }
+}

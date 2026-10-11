@@ -35,6 +35,11 @@ public class OAuthIntegrationService : IOAuthIntegrationService
         }
     }
 
+    public async Task<bool> IsExternalAccountLinkedToOtherUserAsync(string provider, long externalUserId, int userId)
+    {
+        return await _oAuthIntegrationRepository.IsExternalAccountLinkedToOtherUserAsync(provider, externalUserId, userId);
+    }
+
     public async Task<bool> SaveExternalProfileAsync(ProfilesExternal profile)
     {
         try

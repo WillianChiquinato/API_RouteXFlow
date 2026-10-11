@@ -18,7 +18,7 @@ public class AuditLogService : IAuditLogService
 
     public async Task<CustomResponse<List<AuditLogListItemResponse>>> SearchAsync(int requesterId, AuditLogFilterRequest filter)
     {
-        if (!await _repository.IsSuperAdminAsync(requesterId))
+        if (!await _repository.IsAdminRootAsync(requesterId))
             return CustomResponse<List<AuditLogListItemResponse>>.Fail(Forbidden);
 
         filter.Page = Math.Max(filter.Page, 1);
@@ -30,7 +30,7 @@ public class AuditLogService : IAuditLogService
 
     public async Task<CustomResponse<AuditLogDetailResponse>> GetByIdAsync(int requesterId, int id)
     {
-        if (!await _repository.IsSuperAdminAsync(requesterId))
+        if (!await _repository.IsAdminRootAsync(requesterId))
             return CustomResponse<AuditLogDetailResponse>.Fail(Forbidden);
 
         var log = await _repository.GetByIdAsync(id);

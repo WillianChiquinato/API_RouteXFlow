@@ -64,9 +64,6 @@ public class AuthController : ControllerBase
             Id = userId,
             Name = User.FindFirstValue(ClaimTypes.Name) ?? User.FindFirstValue("name"),
             Email = User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue("email"),
-            Role = User.FindAll(ClaimTypes.Role)
-                .Select(c => c.Value)
-                .ToList(),
             User = user.Result is null ? new UserProfileDTO() : UserProfileDTO.From(user.Result),
             Preferences = user.Result?.Preferences?.FirstOrDefault() is { } preferences
                 ? UserPreferencesDTO.From(preferences)

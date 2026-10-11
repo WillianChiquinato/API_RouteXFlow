@@ -56,4 +56,14 @@ public class MercadoLivreController : ControllerBase
 
         return result.Success ? Ok(result) : BadRequest(result);
     }
+
+    [HttpPost]
+    [Route("webhook")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Webhook([FromBody] object request)
+    {
+        var result = await _mercadoLivreService.HandleWebhookAsync(request);
+
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
 }

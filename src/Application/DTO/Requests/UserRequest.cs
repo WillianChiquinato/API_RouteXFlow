@@ -6,6 +6,7 @@ public class UserRegisterRequest
     public string PhoneNumber { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
     public int RoleId { get; set; }
+    public int AccountTypeId { get; set; }
     public List<int> AppsActives = new List<int>();
 }
 

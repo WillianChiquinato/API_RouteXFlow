@@ -47,6 +47,7 @@ public class UserRepository : IUserRepository
             PhoneNumber = userRegisterRequest.PhoneNumber.Trim(),
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(userRegisterRequest.Password),
             RoleId = userRegisterRequest.RoleId,
+            AccountType = (AccountType)userRegisterRequest.AccountTypeId,
             EmailVerified = false,
             CreatedAt = DateTime.UtcNow,
             Preferences = { new Preferences() }

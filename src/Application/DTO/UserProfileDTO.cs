@@ -9,6 +9,9 @@ public class UserProfileDTO
     public string Email { get; set; } = string.Empty;
     public string Cpf { get; set; } = string.Empty;
     public string PhoneNumber { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty;
+    public int RoleId { get; set; }
+    public int AccountType { get; set; }
 
     public static UserProfileDTO From(User user) => new()
     {
@@ -17,6 +20,9 @@ public class UserProfileDTO
         Email = user.Email,
         Cpf = user.Cpf,
         PhoneNumber = user.PhoneNumber,
+        Role = user.Role?.Name ?? string.Empty,
+        RoleId = user.RoleId,
+        AccountType = (int)user.AccountType
     };
 }
 

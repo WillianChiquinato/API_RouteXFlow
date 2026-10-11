@@ -7,4 +7,5 @@ public interface IMercadoLivreService
     Task<CustomResponse<string>> GetAuthorizationUrlAsync(int userId);
     Task<CustomResponse<string>> HandleOAuthCallbackAsync(string code, string state);
     Task<CustomResponse<MercadoLivreUserResponse>> GetUserInfoAsync(int userId);
+    Task<CustomResponse<string>> HandleWebhookAsync(object request);
 }

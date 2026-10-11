@@ -7,7 +7,7 @@ namespace API_RouteXFlow.Repository;
 
 public class AuditLogRepository : IAuditLogRepository
 {
-    private const int SuperAdminRoleId = 1;
+    private const int SuperAdminRoleId = 999;
 
     private readonly AppDbContext _dbContext;
 
@@ -58,6 +58,6 @@ public class AuditLogRepository : IAuditLogRepository
     public Task<AuditLog?> GetByIdAsync(int id) =>
         _dbContext.AuditLogs.AsNoTracking().FirstOrDefaultAsync(a => a.Id == id);
 
-    public Task<bool> IsSuperAdminAsync(int userId) =>
+    public Task<bool> IsAdminRootAsync(int userId) =>
         _dbContext.Users.AsNoTracking().AnyAsync(u => u.Id == userId && u.RoleId == SuperAdminRoleId);
 }

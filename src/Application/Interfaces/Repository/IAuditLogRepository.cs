@@ -6,5 +6,5 @@ public interface IAuditLogRepository
 {
     Task<(List<AuditLogListItemResponse> Items, int Total)> SearchAsync(AuditLogFilterRequest filter);
     Task<AuditLog?> GetByIdAsync(int id);
-    Task<bool> IsSuperAdminAsync(int userId);
+    Task<bool> IsAdminRootAsync(int userId);
 }

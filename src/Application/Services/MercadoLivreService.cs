@@ -98,6 +98,9 @@ public class MercadoLivreService : IMercadoLivreService
             return new CustomResponse<string>(false, new List<string> { "Resposta inválida ao obter token do Mercado Livre." }, null, null);
         }
 
+        if (await _oauthIntegrationService.IsExternalAccountLinkedToOtherUserAsync(Provider, tokenResponse.UserId, oauthState.UserId))
+            return CustomResponse<string>.Fail("Esta conta do Mercado Livre já está vinculada a outro usuário.");
+
         var oauthIntegration = new OAuthIntegration
         {
             Provider = "MercadoLivre",
@@ -152,6 +155,10 @@ public class MercadoLivreService : IMercadoLivreService
 
         if (user == null)
             return CustomResponse<MercadoLivreUserResponse>.Fail("Resposta inválida do Mercado Livre.");
+
+        //Tem que ver se a conta do ML é a mesma vinculada ao usuário do RouteXFlow, se não for, não deixa continuar.
+        if (user.Id != integration.ExternalUserId)
+            return CustomResponse<MercadoLivreUserResponse>.Fail("O usuário do Mercado Livre não corresponde ao usuário autenticado.");
 
         if (integration.ProviderApp != null)
             user.apps = integration.ProviderApp;
@@ -214,4 +221,21 @@ public class MercadoLivreService : IMercadoLivreService
 
         return await _oauthIntegrationService.SaveOAuthIntegrationAsync(integration);
     }
+
+    public async Task<CustomResponse<string>> HandleWebhookAsync(object request)
+    {
+        try
+        {
+            var json = System.Text.Json.JsonSerializer.Serialize(request);
+            _logger.LogInformation("Webhook recebido do Mercado Livre: {Json}", json);
+
+            return CustomResponse<string>.SuccessTrade("Webhook processado com sucesso.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao processar webhook do Mercado Livre.");
+            return CustomResponse<string>.Fail("Erro ao processar webhook do Mercado Livre.");
+        }
+    }
+
 }
