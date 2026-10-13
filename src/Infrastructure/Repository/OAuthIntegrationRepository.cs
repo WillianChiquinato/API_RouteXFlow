@@ -103,4 +103,45 @@ public class OAuthIntegrationRepository : IOAuthIntegrationRepository
 
         return entity.ExpiresAt < DateTime.UtcNow ? null : entity;
     }
+
+    public async Task<bool> SaveShipmentWebhookAsync(ShipmentWebhookDTO webhook)
+    {
+        var webhooktransform = new ShipmentWebhook
+        {
+            ShipmentId = webhook.ShipmentId,
+            UserId = webhook.UserId,
+            TypeShipment = webhook.TypeShipment,
+            ReceivedAt = webhook.ReceivedAt ?? DateTime.UtcNow,
+            ApplicationId = webhook.ApplicationId,
+            Sent = webhook.Sent,
+            Payload = webhook.Payload
+        };
+
+        var existing = await _dbContext.ShipmentWebhooks
+            .FirstOrDefaultAsync(w => w.ShipmentId == webhook.ShipmentId && w.UserId == webhook.UserId);
+
+        if (existing == null)
+        {
+            _dbContext.ShipmentWebhooks.Add(webhooktransform);
+        }
+        else
+        {
+            existing.UserId = webhooktransform.UserId;
+            existing.ShipmentId = webhooktransform.ShipmentId;
+            existing.TypeShipment = webhooktransform.TypeShipment;
+            existing.ReceivedAt = webhooktransform.ReceivedAt;
+            existing.ApplicationId = webhooktransform.ApplicationId;
+            existing.Sent = webhooktransform.Sent;
+            existing.Payload = webhooktransform.Payload;
+        }
+
+        await _dbContext.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<ShipmentWebhook?> GetShipmentIntegrationAsync(int userId)
+    {
+        return await _dbContext.ShipmentWebhooks
+            .FirstOrDefaultAsync(w => w.UserId == userId && w.IsActive);
+    }
 }

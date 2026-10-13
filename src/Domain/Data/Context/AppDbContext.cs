@@ -36,6 +36,7 @@ public class AppDbContext : DbContext
     public DbSet<OAuthIntegration> OAuthIntegrations { get; set; }
     public DbSet<OAuthState> OAuthStates { get; set; }
     public DbSet<ProfilesExternal> ProfilesExternals { get; set; }
+    public DbSet<ShipmentWebhook> ShipmentWebhooks { get; set; }
 
     public override int SaveChanges()
     {

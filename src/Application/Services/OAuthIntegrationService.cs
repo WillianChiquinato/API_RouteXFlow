@@ -102,4 +102,31 @@ public class OAuthIntegrationService : IOAuthIntegrationService
             return null;
         }
     }
+
+    public async Task<bool> SaveShipmentWebhookAsync(ShipmentWebhookDTO webhook)
+    {
+        try
+        {
+            return await _oAuthIntegrationRepository.SaveShipmentWebhookAsync(webhook);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao salvar webhook de envio.");
+            return false;
+        }
+    }
+
+    public async Task<ShipmentWebhook?> GetShipmentIntegrationAsync(int userId)
+    {
+        try
+        {
+            return await _oAuthIntegrationRepository.GetShipmentIntegrationAsync(userId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao buscar integração de envio.");
+            return null;
+        }
+    }
+
 }

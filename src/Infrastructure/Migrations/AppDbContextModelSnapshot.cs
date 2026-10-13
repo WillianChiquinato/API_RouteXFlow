@@ -1212,6 +1212,67 @@ namespace Infrastructure.Migrations
                     b.ToTable("route_position_stop");
                 });
 
+            modelBuilder.Entity("API_RouteXFlow.Domain.Data.Entities.ShipmentWebhook", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<long>("ApplicationId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("application_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("payload");
+
+                    b.Property<DateTime>("ReceivedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("received_at");
+
+                    b.Property<DateTimeOffset?>("Sent")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent");
+
+                    b.Property<string>("ShipmentId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("shipment_id");
+
+                    b.Property<string>("Topic")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("topic");
+
+                    b.Property<int>("TypeShipment")
+                        .HasColumnType("integer")
+                        .HasColumnName("type_shipment");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("shipment_webhook");
+                });
+
             modelBuilder.Entity("API_RouteXFlow.Domain.Data.Entities.Status", b =>
                 {
                     b.Property<int>("Id")

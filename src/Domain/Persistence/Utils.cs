@@ -42,4 +42,24 @@ public class Utils
 
         return cpf.EndsWith(digito);
     }
+
+    public static string? ExtractShipmentId(string? resource)
+    {
+        if (string.IsNullOrWhiteSpace(resource))
+            return null;
+
+        var segments = resource.Split(
+            '/',
+            StringSplitOptions.RemoveEmptyEntries
+        );
+
+        var index = Array.IndexOf(segments, "shipments");
+
+        if (index < 0 || index + 1 >= segments.Length)
+            return null;
+
+        return long.TryParse(segments[index + 1], out _)
+            ? segments[index + 1]
+            : null;
+    }
 }

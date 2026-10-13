@@ -66,3 +66,42 @@ public class MercadoLivreWebhookRequest
     [JsonPropertyName("sent")]
     public DateTime Sent { get; set; }
 }
+
+public class FlexHandshakeNotification
+{
+    [JsonPropertyName("_id")]
+    public string? Id { get; set; }
+
+    [JsonPropertyName("topic")]
+    public string? Topic { get; set; }
+
+    [JsonPropertyName("resource")]
+    public string? Resource { get; set; }
+    
+    [JsonPropertyName("user_id")]
+    public long UserId { get; set; }
+    
+    [JsonPropertyName("application_id")]
+    public long ApplicationId { get; set; }
+
+    [JsonPropertyName("attempts")]
+    public int Attempts { get; set; }
+
+    [JsonPropertyName("sent")]
+    public DateTime? Sent { get; set; }
+
+    [JsonPropertyName("received")]
+    public DateTime? Received { get; set; }
+}
+
+public class ShipmentWebhookDTO
+{
+    public string? ShipmentId { get; set; }
+    public long UserId { get; set; }
+    public long ApplicationId { get; set; }
+    public DateTime? Sent { get; set; }
+    public string? Topic { get; set; }
+    public DateTime? ReceivedAt { get; set; }
+    public TypeShipment TypeShipment { get; set; } = TypeShipment.MercadoLivre;
+    public string? Payload { get; set; }
+}

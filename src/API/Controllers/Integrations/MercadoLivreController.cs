@@ -8,6 +8,7 @@ namespace API_RouteXFlow.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class MercadoLivreController : ControllerBase
 {
     private readonly IMercadoLivreService _mercadoLivreService;
@@ -60,9 +61,24 @@ public class MercadoLivreController : ControllerBase
     [HttpPost]
     [Route("webhook")]
     [AllowAnonymous]
-    public async Task<IActionResult> Webhook([FromBody] object request)
+    public async Task<IActionResult> Webhook([FromBody] FlexHandshakeNotification request)
     {
         var result = await _mercadoLivreService.HandleWebhookAsync(request);
+
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet]
+    [Route("getShipmentActive")]
+    public async Task<IActionResult> GetShipmentActive()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                     ?? User.FindFirstValue("sub");
+
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized(CustomResponse<string>.Fail("Usuário não autenticado."));
+
+        var result = await _mercadoLivreService.GetShipmentActiveAsync(int.Parse(userId));
 
         return result.Success ? Ok(result) : BadRequest(result);
     }
