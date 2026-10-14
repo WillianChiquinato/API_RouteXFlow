@@ -8,4 +8,5 @@ public interface IContainerService
     Task<CustomResponse<List<ContainerToDevicesDTO>>> GetContainers(int userId);
     Task<CustomResponse<bool>> RegisterAsync(ContainerRegisterRequest containerRegisterRequest, int userId);
     Task<CustomResponse<bool>> EditAsync(ContainerEditRequest containerEditRequest, int userId);
+    Task<CustomResponse<List<ContainerToDevicesDTO>>> GetContainersWithNoSession(int userId);
 }

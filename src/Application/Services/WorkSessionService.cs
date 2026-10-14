@@ -191,4 +191,19 @@ public class WorkSessionService : IWorkSessionService
             throw;
         }
     }
+
+    public async Task<bool> IsWorkSessionActiveAsync(int userId)
+    {
+        try
+        {
+            var openSession = await _workSessionRepository.GetOpenWorkSessionAsync(userId);
+            return openSession is not null;
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Erro ao verificar corrida ativa");
+            throw;
+        }
+    }
+
 }

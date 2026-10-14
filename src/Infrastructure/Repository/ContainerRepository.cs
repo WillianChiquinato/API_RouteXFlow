@@ -83,4 +83,25 @@ public class ContainerRepository : IContainerRepository
 
         return true;
     }
+
+    public async Task<List<ContainerToDevicesDTO>> GetContainersWithNoSessionAsync(int userId)
+    {
+        return await _dbContext.Containers
+            .AsNoTracking()
+            .Where(container => !_dbContext.WorkSessions
+                .Any(session =>
+                    session.ContainerId == container.Id &&
+                    session.UserId == userId))
+            .Select(container => new ContainerToDevicesDTO
+            {
+                Id = container.Id,
+                Name = container.Name,
+                IsActive = container.IsActive,
+                Devices = container.ContainerDevices
+                    .Where(containerDevice => containerDevice.IsActive)
+                    .Select(containerDevice => containerDevice.Device!)
+                    .ToList()
+            })
+            .ToListAsync();
+    }
 }

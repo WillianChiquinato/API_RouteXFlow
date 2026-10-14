@@ -8,4 +8,5 @@ public interface IWorkSessionService
     Task<CustomResponse<WorkSessionSummaryResponse>> FinishAsync(int workSessionId, WorkSessionRequest request, int userId);
     Task<CustomResponse<List<WorkSessionSummaryResponse>>> GetSessions(WorkSessionFilterRequest filter, int userId);
     Task<CustomResponse<WorkSessionDetailResponse>> GetSessionDetail(int id, int userId);
+    Task<bool> IsWorkSessionActiveAsync(int userId);
 }

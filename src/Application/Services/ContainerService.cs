@@ -94,4 +94,19 @@ public class ContainerService : IContainerService
             throw;
         }
     }
+
+    public async Task<CustomResponse<List<ContainerToDevicesDTO>>> GetContainersWithNoSession(int userId)
+    {
+        try
+        {
+            var containers = await _containerRepository.GetContainersWithNoSessionAsync(userId);
+            return new CustomResponse<List<ContainerToDevicesDTO>>(true, new List<string>(), containers);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Erro ao obter containers sem sessão ativa");
+            throw;
+        }
+    }
+
 }

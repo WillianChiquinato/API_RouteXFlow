@@ -14,12 +14,14 @@ public class MercadoLivreService : IMercadoLivreService
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IOAuthIntegrationService _oauthIntegrationService;
+    private readonly IWorkSessionService _workSessionService;
     private readonly ILogger<MercadoLivreService> _logger;
 
-    public MercadoLivreService(IHttpClientFactory httpClientFactory, IOAuthIntegrationService oauthIntegrationService, ILogger<MercadoLivreService> logger)
+    public MercadoLivreService(IHttpClientFactory httpClientFactory, IOAuthIntegrationService oauthIntegrationService, IWorkSessionService workSessionService, ILogger<MercadoLivreService> logger)
     {
         _httpClientFactory = httpClientFactory;
         _oauthIntegrationService = oauthIntegrationService;
+        _workSessionService = workSessionService;
         _logger = logger;
     }
 
@@ -247,6 +249,12 @@ public class MercadoLivreService : IMercadoLivreService
     {
         try
         {
+            var workSessionActive = await _workSessionService.IsWorkSessionActiveAsync((int)request.UserId);
+            if (!workSessionActive)
+            {
+                return CustomResponse<string>.Fail("Não é possível processar o webhook do Mercado Livre, pois não há uma sessão de trabalho ativa.");
+            }
+
             if (request.Resource == null)
                 return CustomResponse<string>.Fail("Requisição de webhook inválida.");
 

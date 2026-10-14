@@ -36,6 +36,24 @@ public class ContainerController : ControllerBase
         return containers.Result != null ? Ok(containers) : BadRequest(containers);
     }
 
+    [HttpGet]
+    [Route("getContainersWithNoSession")]
+    public async Task<IActionResult> GetContainersWithNoSession()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                     ?? User.FindFirstValue("sub");
+
+        if (string.IsNullOrEmpty(userId))
+        {
+            var response = new CustomResponse<string>(false, new List<string> { "Usuário não autenticado." }, null);
+            return Unauthorized(response);
+        }
+
+        var containers = await _containerService.GetContainersWithNoSession(int.Parse(userId));
+
+        return containers.Result != null ? Ok(containers) : BadRequest(containers);
+    }
+
     [HttpPost]
     [Route("registerContainer")]
     public async Task<IActionResult> Register(ContainerRegisterRequest request)
