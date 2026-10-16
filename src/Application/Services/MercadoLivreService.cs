@@ -128,7 +128,7 @@ public class MercadoLivreService : IMercadoLivreService
             return new CustomResponse<string>(false, new List<string> { "Erro ao obter token do Mercado Livre." }, null, null);
         }
 
-        var tokenResponse = await response.Content.ReadFromJsonAsync<TokenResponse>();
+        var tokenResponse = await response.Content.ReadFromJsonAsync<MercadoLivreTokenResponse>();
 
         if (tokenResponse == null || string.IsNullOrEmpty(tokenResponse.AccessToken))
         {
@@ -141,7 +141,7 @@ public class MercadoLivreService : IMercadoLivreService
 
         var oauthIntegration = new OAuthIntegration
         {
-            Provider = "MercadoLivre",
+            Provider = Provider,
             ProviderAppId = 5,
             AccessToken = tokenResponse.AccessToken,
             TokenType = tokenResponse.TokenType ?? string.Empty,
@@ -230,7 +230,7 @@ public class MercadoLivreService : IMercadoLivreService
             return false;
         }
 
-        var token = await response.Content.ReadFromJsonAsync<TokenResponse>();
+        var token = await response.Content.ReadFromJsonAsync<MercadoLivreTokenResponse>();
 
         if (token == null || string.IsNullOrEmpty(token.AccessToken))
             return false;

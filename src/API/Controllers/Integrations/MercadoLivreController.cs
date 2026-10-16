@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace API_RouteXFlow.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/mercadolivre")]
 [Authorize]
 public class MercadoLivreController : ControllerBase
 {

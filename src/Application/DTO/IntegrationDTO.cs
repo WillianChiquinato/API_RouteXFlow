@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
 using API_RouteXFlow.Domain.Data.Entities;
 
-public class TokenResponse
+public class MercadoLivreTokenResponse
 {
     [JsonPropertyName("access_token")]
     public string? AccessToken { get; set; }
@@ -104,4 +104,40 @@ public class ShipmentWebhookDTO
     public DateTime? ReceivedAt { get; set; }
     public TypeShipment TypeShipment { get; set; } = TypeShipment.MercadoLivre;
     public string? Payload { get; set; }
+}
+
+public class ShopeeTokenResponse
+{
+    [JsonPropertyName("access_token")]
+    public string? AccessToken { get; set; }
+
+    [JsonPropertyName("expire_in")]
+    public int ExpiresIn { get; set; }
+
+    [JsonPropertyName("refresh_token")]
+    public string? RefreshToken { get; set; }
+
+    [JsonPropertyName("shop_id")]
+    public long ShopId { get; set; }
+}
+
+public class ShopeeOrderResponse
+{
+    [JsonPropertyName("more")]
+    public bool More { get; set; }
+
+    [JsonPropertyName("next_cursor")]
+    public string NextCursor { get; set; } = string.Empty;
+
+    [JsonPropertyName("order_list")]
+    public List<ShopeeOrder> OrderList { get; set; } = new List<ShopeeOrder>();
+}
+
+public class ShopeeOrder
+{
+    [JsonPropertyName("order_sn")]
+    public string OrderSn { get; set; } = string.Empty;
+
+    [JsonPropertyName("order_status")]
+    public string OrderStatus { get; set; } = string.Empty;
 }
