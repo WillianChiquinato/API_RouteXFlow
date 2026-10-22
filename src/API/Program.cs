@@ -3,6 +3,7 @@ using System.Threading.RateLimiting;
 using Amazon.S3;
 using Amazon.S3.Util;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.OpenApi;
 using API_RouteXFlow.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -198,24 +199,43 @@ app.UseCors(CorsExtensions.AllowRouteXFlowPolicy);
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
-
+    Console.WriteLine("Aplicando migrations...");
     try
     {
-        var s3Client = scope.ServiceProvider.GetRequiredService<IAmazonS3>();
+        db.Database.Migrate();
+        Console.WriteLine("Migrations aplicadas.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"ERRO ao aplicar migrations (DB_SERVER={Environment.GetEnvironmentVariable("DB_SERVER")}): {ex}");
+        throw;
+    }
+}
+
+// Bucket S3 em background com timeout curto: não pode atrasar a abertura da porta (healthcheck).
+_ = Task.Run(async () =>
+{
+    try
+    {
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        var s3Client = app.Services.GetRequiredService<IAmazonS3>();
         if (!await AmazonS3Util.DoesS3BucketExistV2Async(s3Client, storageBucketName))
         {
-            await s3Client.PutBucketAsync(storageBucketName);
+            await s3Client.PutBucketAsync(storageBucketName, cts.Token);
         }
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Aviso: Não foi possível ligar ao S3 no arranque: {ex.Message}");
+        Console.WriteLine($"Aviso: Não foi possível ligar ao S3 no arranque ({storageEndpoint}): {ex.Message}");
     }
-}
+});
+
+// Healthcheck antes do rate limiter e do redirect HTTPS (o Coolify chama via http interno).
+app.MapGet("/health", () => Results.Ok("healthy")).DisableRateLimiting();
 
 app.UseRateLimiter();
-app.UseHttpsRedirection();
+if (app.Environment.IsDevelopment())
+    app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseMiddleware<AuditLogMiddleware>();
 app.UseAuthorization();
