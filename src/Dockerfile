@@ -19,7 +19,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 
 # Instala a dependência do Linux exigida pelo Npgsql
-RUN apt-get update && apt-get install -y --no-install-recommends libgssapi-krb5-2 \
+RUN apt-get update && apt-get install -y --no-install-recommends libgssapi-krb5-2 curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Roda com usuário sem privilégios
