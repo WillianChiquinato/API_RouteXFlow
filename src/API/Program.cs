@@ -200,10 +200,17 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
 
-    var s3Client = scope.ServiceProvider.GetRequiredService<IAmazonS3>();
-    if (!await AmazonS3Util.DoesS3BucketExistV2Async(s3Client, storageBucketName))
+    try
     {
-        await s3Client.PutBucketAsync(storageBucketName);
+        var s3Client = scope.ServiceProvider.GetRequiredService<IAmazonS3>();
+        if (!await AmazonS3Util.DoesS3BucketExistV2Async(s3Client, storageBucketName))
+        {
+            await s3Client.PutBucketAsync(storageBucketName);
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Aviso: Não foi possível ligar ao S3 no arranque: {ex.Message}");
     }
 }
 
