@@ -217,10 +217,7 @@ app.UseMiddleware<AuditLogMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();
-
-static IResult ApiHealthResponse() => Results.Text("API Running");
-
-app.MapGet("/", ApiHealthResponse);
+app.MapGet("/", () => "API Running");
 
 app.UsePresentation(builder.Environment);
 
