@@ -74,7 +74,9 @@ public class DeviceService : IDeviceService
             var transformDeviceIsOn = await _deviceRepository.DeviceIsOnAsync(containerDevice.Device);
             
             if (transformDeviceIsOn)
-                return new CustomResponse<SyncDeviceResponse>(false, new List<string> { "Não foi possivel conectar o Device." }, null)
+            {
+                return new CustomResponse<SyncDeviceResponse>(false, new List<string> { "Não foi possivel conectar o Device." }, null);
+            }
 
             return new CustomResponse<SyncDeviceResponse>(true, new List<string>(), new SyncDeviceResponse
             {
