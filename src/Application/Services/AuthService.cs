@@ -11,13 +11,15 @@ public class AuthService : IAuthService
 {
     private readonly TokenService _tokenService;
     private readonly IUserRepository _userRepository;
+    private readonly ISubAccountRepository _subAccountRepository;
     private readonly IEmailService _emailService;
     private readonly IEmailVerificationService _emailVerificationService;
 
-    public AuthService(TokenService tokenService, IUserRepository userRepository, IEmailService emailService, IEmailVerificationService emailVerificationService)
+    public AuthService(TokenService tokenService, IUserRepository userRepository, ISubAccountRepository subAccountRepository, IEmailService emailService, IEmailVerificationService emailVerificationService)
     {
         _tokenService = tokenService;
         _userRepository = userRepository;
+        _subAccountRepository = subAccountRepository;
         _emailService = emailService;
         _emailVerificationService = emailVerificationService;
     }
@@ -111,6 +113,42 @@ public class AuthService : IAuthService
         }
     }
 
+    public async Task<CustomResponse<string>> LoginInAppsAsync(LoginInAppsRequest request)
+    {
+        try
+        {
+            var userSubAccount = await _subAccountRepository.GetSubAccountUserByEmailAsync(request.UserName);
+
+            // O repositório devolve uma SubAccount vazia (Id 0) quando não encontra.
+            if (userSubAccount == null || userSubAccount.Id == 0)
+            {
+                return CustomResponse<string>.Fail("Usuário com sub conta Inválido.");
+            }
+
+            bool validatePasswordSubAccount = BCrypt.Net.BCrypt.Verify(request.PasswordApp, userSubAccount.PasswordHash);
+
+            if (!validatePasswordSubAccount)
+            {
+                return CustomResponse<string>.Fail("Senha inválida para sub contas.");
+            }
+
+            var subAccountComposeDTO = new SubAccountComposeDTO
+            {
+                Id = userSubAccount.Id,
+                OwnerUserId = userSubAccount.OwnerUserId,
+                OwnerEmail = userSubAccount.OwnerUser?.Email,
+                UserName = userSubAccount.Username
+            };
+
+            var token = await _tokenService.GenerateTokenInSubAccountAsync(subAccountComposeDTO);
+            return CustomResponse<string>.SuccessTrade(token);
+        }
+        catch (Exception ex)
+        {
+            return CustomResponse<string>.Fail($"An error occurred during login: {ex.Message}");
+        }
+    }
+
     public async Task<CustomResponse<string>> VerifyEmailAsync(VerifyEmailRequest request)
     {
         var verified = await _emailVerificationService.VerifyAsync(request.Email, request.Code);
@@ -144,6 +182,47 @@ public class AuthService : IAuthService
 
         var refreshedToken = await _tokenService.GenerateTokenAsync(user);
         return CustomResponse<string>.SuccessTrade(refreshedToken);
+    }
+
+    public async Task<CustomResponse<string>> RefreshSubAccountAsync(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            return CustomResponse<string>.Fail("Token não informado.");
+
+        var claims = _tokenService.GetSubAccountFromToken(token, validateLifetime: false);
+        if (claims == null)
+            return CustomResponse<string>.Fail("Token inválido.");
+
+        // Confere no banco: sub conta excluída não consegue renovar o token.
+        var subAccount = await _subAccountRepository.GetByIdWithOwnerAsync(claims.Id);
+        if (subAccount == null || subAccount.OwnerUserId != claims.OwnerUserId)
+            return CustomResponse<string>.Fail("Sub conta não encontrada.");
+
+        var refreshedToken = await _tokenService.GenerateTokenInSubAccountAsync(new SubAccountComposeDTO
+        {
+            Id = subAccount.Id,
+            OwnerUserId = subAccount.OwnerUserId,
+            OwnerEmail = subAccount.OwnerUser?.Email,
+            UserName = subAccount.Username
+        });
+
+        return CustomResponse<string>.SuccessTrade(refreshedToken);
+    }
+
+    public async Task<CustomResponse<Application.DTO.Responses.SubAccountMeResponse>> GetSubAccountMeAsync(int subAccountId, int ownerUserId)
+    {
+        var subAccount = await _subAccountRepository.GetByIdWithOwnerAsync(subAccountId);
+        if (subAccount == null || subAccount.OwnerUserId != ownerUserId)
+            return CustomResponse<Application.DTO.Responses.SubAccountMeResponse>.Fail("Sub conta não encontrada.");
+
+        return CustomResponse<Application.DTO.Responses.SubAccountMeResponse>.SuccessTrade(new Application.DTO.Responses.SubAccountMeResponse
+        {
+            Id = subAccount.Id,
+            Username = subAccount.Username,
+            OwnerUserId = subAccount.OwnerUserId,
+            OwnerEmail = subAccount.OwnerUser?.Email,
+            CreatedAt = subAccount.CreatedAt
+        });
     }
 
     public async Task<CustomResponse<string>> ResetPasswordAsync(ResetPasswordRequest request)

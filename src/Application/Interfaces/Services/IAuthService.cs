@@ -7,7 +7,10 @@ namespace API_RouteXFlow.Interfaces.Services;
 public interface IAuthService
 {
     Task<CustomResponse<string>> LoginAsync(LoginRequest request);
+    Task<CustomResponse<string>> LoginInAppsAsync(LoginInAppsRequest request);
     Task<CustomResponse<string>> RefreshAsync(string token);
+    Task<CustomResponse<string>> RefreshSubAccountAsync(string token);
+    Task<CustomResponse<Application.DTO.Responses.SubAccountMeResponse>> GetSubAccountMeAsync(int subAccountId, int ownerUserId);
     Task<CustomResponse<string>> VerifyEmailAsync(VerifyEmailRequest request);
     Task<CustomResponse<bool>> ResendVerificationAsync(ResendVerificationRequest request);
     Task<CustomResponse<User>> SearchUserByIdAsync(int userId);

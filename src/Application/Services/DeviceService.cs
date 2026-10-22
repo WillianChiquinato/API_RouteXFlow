@@ -10,12 +10,14 @@ public class DeviceService : IDeviceService
 {
     private readonly IDeviceRepository _deviceRepository;
     private readonly IContainerRepository _containerRepository;
+    private readonly ISubAccountRepository _subAccountRepository;
     private readonly ILogger<DeviceService> _logger;
 
-    public DeviceService(IDeviceRepository deviceRepository, IContainerRepository containerRepository, ILogger<DeviceService> logger)
+    public DeviceService(IDeviceRepository deviceRepository, IContainerRepository containerRepository, ISubAccountRepository subAccountRepository, ILogger<DeviceService> logger)
     {
         _deviceRepository = deviceRepository;
         _containerRepository = containerRepository;
+        _subAccountRepository = subAccountRepository;
         _logger = logger;
     }
 
@@ -36,6 +38,54 @@ public class DeviceService : IDeviceService
         catch (Exception e)
         {
             Console.WriteLine(e);
+            throw;
+        }
+    }
+
+    public async Task<CustomResponse<SyncDeviceResponse>> SyncDevices(int subAccountId, int userId, string codeVerify)
+    {
+        try
+        {
+            var subAccount = await _subAccountRepository.GetByIdWithOwnerAsync(subAccountId);
+
+            if (subAccount is null || subAccount.OwnerUserId != userId)
+            {
+                _logger.LogWarning("Sub conta {SubAccountId} não pertence ao usuário {UserId} no sync", subAccountId, userId);
+                return new CustomResponse<SyncDeviceResponse>(false, new List<string> { "Sub conta não pertence ao usuário." }, null);
+            }
+
+            var container = await _containerRepository.GetOpenContainerByUserIdAsync(subAccount.OwnerUserId);
+
+            if (container is null)
+            {
+                _logger.LogWarning("Usuário {UserId} sem container aberto no sync", subAccount.OwnerUserId);
+                return new CustomResponse<SyncDeviceResponse>(false, new List<string> { "Nenhum container aberto para o usuário." }, null);
+            }
+
+            var containerDevice = container.ContainerDevices
+                .FirstOrDefault(cd => cd.Device != null && cd.Device.DeviceIdentifier == codeVerify);
+
+            if (containerDevice?.Device is null)
+            {
+                _logger.LogWarning("Código de sync inválido para o container {ContainerId}", container.Id);
+                return new CustomResponse<SyncDeviceResponse>(false, new List<string> { "Código inválido para o container aberto." }, null);
+            }
+
+            var transformDeviceIsOn = await _deviceRepository.DeviceIsOnAsync(containerDevice.Device);
+            
+            if (transformDeviceIsOn)
+                return new CustomResponse<SyncDeviceResponse>(false, new List<string> { "Não foi possivel conectar o Device." }, null)
+
+            return new CustomResponse<SyncDeviceResponse>(true, new List<string>(), new SyncDeviceResponse
+            {
+                UserId = subAccount.OwnerUserId,
+                DeviceId = containerDevice.DeviceId,
+                DeviceName = containerDevice.Device.Name
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Erro ao Sincronizar device");
             throw;
         }
     }

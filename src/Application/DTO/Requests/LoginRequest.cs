@@ -4,6 +4,12 @@ public class LoginRequest
     public string Password { get; set; } = string.Empty;
 }
 
+public class LoginInAppsRequest
+{
+    public string UserName { get; set; } = string.Empty;
+    public string PasswordApp { get; set; } = string.Empty;
+}
+
 public class ForgotPasswordRequest
 {
     public string Email { get; set; } = string.Empty;

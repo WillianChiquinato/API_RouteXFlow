@@ -7,6 +7,7 @@ namespace API_RouteXFlow.Interfaces.Services;
 public interface IDeviceService
 {
     Task<CustomResponse<List<Device>>> GetDevices();
+    Task<CustomResponse<SyncDeviceResponse>> SyncDevices(int subAccountId, int userId, string codeVerify);
     Task<CustomResponse<bool>> RegisterAsync(DeviceRegisterRequest request, int userId);
     Task<CustomResponse<bool>> EditAsync(DeviceEditRequest request, int userId);
     Task<CustomResponse<bool>> DeleteAsync(int id, int userId);

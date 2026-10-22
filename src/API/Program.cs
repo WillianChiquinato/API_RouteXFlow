@@ -182,6 +182,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 {
                     context.Token = cookieToken;
                 }
+                // Sem sessão de dono, vale a da sub conta (app) para os endpoints operacionais.
+                else if (context.Request.Cookies.TryGetValue(TokenService.SubAccountCookieName, out var subToken))
+                {
+                    context.Token = subToken;
+                }
 
                 return Task.CompletedTask;
             },

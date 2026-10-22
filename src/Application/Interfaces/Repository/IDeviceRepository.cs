@@ -9,4 +9,5 @@ public interface IDeviceRepository
     Task<int?> GetOwnerUserIdByDeviceIdAsync(int deviceId);
     Task<bool> UpdateDeviceAsync(DeviceEditRequest request);
     Task<bool> DeleteDeviceAsync(int id);
+    Task<bool> DeviceIsOnAsync(Device device);
 }

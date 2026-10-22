@@ -2,6 +2,15 @@ using API_RouteXFlow.Domain.Data.Entities;
 
 namespace Application.DTO.Responses;
 
+public class SubAccountMeResponse
+{
+    public int Id { get; set; }
+    public string Username { get; set; } = string.Empty;
+    public int OwnerUserId { get; set; }
+    public string? OwnerEmail { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
 public class SubAccountDTO
 {
     public int Id { get; set; }

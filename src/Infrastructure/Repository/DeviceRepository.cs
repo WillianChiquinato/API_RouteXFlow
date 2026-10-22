@@ -83,4 +83,19 @@ public class DeviceRepository : IDeviceRepository
 
         return true;
     }
+
+    public async Task<bool> DeviceIsOnAsync(Device deviceRequest)
+    {
+        var device = await _dbContext.Devices.FirstOrDefaultAsync(d => d.Id == deviceRequest.Id);
+
+        if (device is null)
+        {
+            return false;
+        }
+
+        device.Connected = true;
+        await _dbContext.SaveChangesAsync();
+
+        return true;
+    }
 }

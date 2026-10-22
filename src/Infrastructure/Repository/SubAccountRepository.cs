@@ -30,6 +30,14 @@ public class SubAccountRepository : ISubAccountRepository
             .FirstOrDefaultAsync(x => x.Id == id && x.OwnerUserId == ownerUserId);
     }
 
+    public async Task<SubAccount?> GetByIdWithOwnerAsync(int id)
+    {
+        return await _dbContext.SubAccounts
+            .AsNoTracking()
+            .Include(x => x.OwnerUser)
+            .FirstOrDefaultAsync(x => x.Id == id);
+    }
+
     public async Task<bool> UsernameExistsAsync(string username)
     {
         return await _dbContext.SubAccounts.AnyAsync(x => x.Username == username);
@@ -56,4 +64,16 @@ public class SubAccountRepository : ISubAccountRepository
         _dbContext.SubAccounts.Remove(subAccount);
         return await _dbContext.SaveChangesAsync() > 0;
     }
+
+    public async Task<SubAccount> GetSubAccountUserByEmailAsync(string userName)
+    {
+        var query = await _dbContext.SubAccounts
+            .AsNoTracking()
+            .Include(user => user.OwnerUser)
+            .Where(sc => sc.Username.Equals(userName))
+            .FirstOrDefaultAsync();
+
+        return query ?? new SubAccount();
+    }
+
 }

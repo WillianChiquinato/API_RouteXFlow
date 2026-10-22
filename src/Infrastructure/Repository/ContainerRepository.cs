@@ -37,6 +37,20 @@ public class ContainerRepository : IContainerRepository
         return await _dbContext.Containers.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id);
     }
 
+    public async Task<Container?> GetOpenContainerByUserIdAsync(int userId)
+    {
+        return await _dbContext.WorkSessions
+            .AsNoTracking()
+            .Where(session => session.UserId == userId
+                              && session.ContainerId != null
+                              && session.State != StateSession.Finalizado)
+            .OrderByDescending(session => session.StartTime)
+            .Select(session => session.Container!)
+            .Include(container => container.ContainerDevices.Where(cd => cd.IsActive))
+                .ThenInclude(cd => cd.Device)
+            .FirstOrDefaultAsync();
+    }
+
     public async Task<int> RegisterContainerAsync(Container container)
     {
         _dbContext.Add(container);
