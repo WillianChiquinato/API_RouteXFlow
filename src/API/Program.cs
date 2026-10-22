@@ -218,7 +218,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-static IResult ApiHealthResponse() => Results.Ok("API Running");
+static IResult ApiHealthResponse() => Results.Text("API Running");
 
 app.MapGet("/", ApiHealthResponse);
 
