@@ -16,10 +16,7 @@ using Infrastructure.Audit;
 DotNetEnv.Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
-if (builder.Environment.IsProduction())
-{
-    builder.WebHost.UseUrls("http://0.0.0.0:8080");
-}
+builder.WebHost.UseUrls("http://0.0.0.0:8080");
 
 var connectionString =
     $"Host={Environment.GetEnvironmentVariable("DB_SERVER")};" +
