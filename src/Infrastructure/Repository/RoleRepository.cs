@@ -16,6 +16,9 @@ public class RoleRepository : IRoleRepository
 
     public async Task<List<Role>> GetRoles()
     {
-        return await _dbContext.Roles.AsNoTracking().ToListAsync();
+        return await _dbContext.Roles
+            .AsNoTracking()
+            .Where(role => role.Id != 999)
+            .ToListAsync();
     }
 }
