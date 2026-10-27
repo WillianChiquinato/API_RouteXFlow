@@ -110,6 +110,7 @@ public class OAuthIntegrationRepository : IOAuthIntegrationRepository
         {
             ShipmentId = webhook.ShipmentId,
             UserId = webhook.UserId,
+            Topic = webhook.Topic ?? string.Empty,
             TypeShipment = webhook.TypeShipment,
             ReceivedAt = webhook.ReceivedAt ?? DateTime.UtcNow,
             ApplicationId = webhook.ApplicationId,
@@ -128,6 +129,7 @@ public class OAuthIntegrationRepository : IOAuthIntegrationRepository
         {
             existing.UserId = webhooktransform.UserId;
             existing.ShipmentId = webhooktransform.ShipmentId;
+            existing.Topic = webhooktransform.Topic;
             existing.TypeShipment = webhooktransform.TypeShipment;
             existing.ReceivedAt = webhooktransform.ReceivedAt;
             existing.ApplicationId = webhooktransform.ApplicationId;
@@ -139,9 +141,12 @@ public class OAuthIntegrationRepository : IOAuthIntegrationRepository
         return true;
     }
 
-    public async Task<ShipmentWebhook?> GetShipmentIntegrationAsync(int userId)
+    // O UserId do webhook é o user_id do Mercado Livre (ExternalUserId da integração), não o do RouteXFlow.
+    public async Task<ShipmentWebhook?> GetShipmentIntegrationAsync(long externalUserId)
     {
         return await _dbContext.ShipmentWebhooks
-            .FirstOrDefaultAsync(w => w.UserId == userId && w.IsActive);
+            .Where(w => w.UserId == externalUserId && w.IsActive)
+            .OrderByDescending(w => w.ReceivedAt)
+            .FirstOrDefaultAsync();
     }
 }

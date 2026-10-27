@@ -14,14 +14,12 @@ public class MercadoLivreService : IMercadoLivreService
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IOAuthIntegrationService _oauthIntegrationService;
-    private readonly IWorkSessionService _workSessionService;
     private readonly ILogger<MercadoLivreService> _logger;
 
-    public MercadoLivreService(IHttpClientFactory httpClientFactory, IOAuthIntegrationService oauthIntegrationService, IWorkSessionService workSessionService, ILogger<MercadoLivreService> logger)
+    public MercadoLivreService(IHttpClientFactory httpClientFactory, IOAuthIntegrationService oauthIntegrationService, ILogger<MercadoLivreService> logger)
     {
         _httpClientFactory = httpClientFactory;
         _oauthIntegrationService = oauthIntegrationService;
-        _workSessionService = workSessionService;
         _logger = logger;
     }
 
@@ -245,15 +243,14 @@ public class MercadoLivreService : IMercadoLivreService
         return await _oauthIntegrationService.SaveOAuthIntegrationAsync(integration);
     }
 
+    // O user_id do webhook é o do Mercado Livre (ExternalUserId), então é gravado como veio:
+    // a ligação com o usuário do RouteXFlow é feita na leitura, pela integração OAuth.
     public async Task<CustomResponse<string>> HandleWebhookAsync(FlexHandshakeNotification request)
     {
         try
         {
-            var workSessionActive = await _workSessionService.IsWorkSessionActiveAsync((int)request.UserId);
-            if (!workSessionActive)
-            {
-                return CustomResponse<string>.Fail("Não é possível processar o webhook do Mercado Livre, pois não há uma sessão de trabalho ativa.");
-            }
+            var payload = System.Text.Json.JsonSerializer.Serialize(request);
+            _logger.LogInformation("Webhook do Mercado Livre recebido: {Payload}", payload);
 
             if (request.Resource == null)
                 return CustomResponse<string>.Fail("Requisição de webhook inválida.");
@@ -263,7 +260,7 @@ public class MercadoLivreService : IMercadoLivreService
             if (shipmentId is null)
                 return CustomResponse<string>.Fail("Não foi possível extrair o ID do envio do recurso.");
 
-            var savedShipment = await _oauthIntegrationService.SaveShipmentWebhookAsync(new ShipmentWebhookDTO
+            var saved = await _oauthIntegrationService.SaveShipmentWebhookAsync(new ShipmentWebhookDTO
             {
                 ShipmentId = shipmentId,
                 UserId = request.UserId,
@@ -272,8 +269,11 @@ public class MercadoLivreService : IMercadoLivreService
                 ApplicationId = request.ApplicationId,
                 TypeShipment = TypeShipment.MercadoLivre,
                 Sent = request.Sent,
-                Payload = System.Text.Json.JsonSerializer.Serialize(request)
+                Payload = payload
             });
+
+            if (!saved)
+                return CustomResponse<string>.Fail("Erro ao salvar o webhook do Mercado Livre.");
 
             return CustomResponse<string>.SuccessTrade($"Webhook recebido com sucesso. ID do envio: {shipmentId}");
         }
@@ -286,22 +286,65 @@ public class MercadoLivreService : IMercadoLivreService
 
     public async Task<CustomResponse<string>> GetShipmentActiveAsync(int userId)
     {
-        var getShipmentIntegration = await _oauthIntegrationService.GetShipmentIntegrationAsync(userId);
+        var integration = await GetIntegrationAsync(userId);
 
-        using var response = await OpenClientAsync(userId, HttpMethod.Get, $"shipments/{getShipmentIntegration?.ShipmentId}");
+        if (!integration.Success || integration.Result == null)
+            return CustomResponse<string>.Fail(integration.Errors?.FirstOrDefault() ?? "Integração com o Mercado Livre não encontrada.");
+
+        var webhook = await _oauthIntegrationService.GetShipmentIntegrationAsync(integration.Result.ExternalUserId);
+
+        if (webhook == null || string.IsNullOrEmpty(webhook.ShipmentId))
+            return CustomResponse<string>.Fail("Nenhum envio ativo encontrado para esta conta do Mercado Livre.");
+
+        // O handshake indica o recurso a consultar (/flex/sites/{SITE}/shipments/{ID}/assignment/v1).
+        var assignment = await GetRawAsync(userId, ResolveAssignmentEndpoint(webhook));
+        var shipment = await GetRawAsync(userId, $"shipments/{webhook.ShipmentId}");
+
+        if (assignment == null && shipment == null)
+            return CustomResponse<string>.Fail("Erro ao consultar o envio no Mercado Livre.");
+
+        var result = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            shipmentId = webhook.ShipmentId,
+            assignment = assignment == null ? (System.Text.Json.JsonElement?)null : System.Text.Json.JsonDocument.Parse(assignment).RootElement,
+            shipment = shipment == null ? (System.Text.Json.JsonElement?)null : System.Text.Json.JsonDocument.Parse(shipment).RootElement
+        });
+
+        return CustomResponse<string>.SuccessTrade(result);
+    }
+
+    private static string ResolveAssignmentEndpoint(ShipmentWebhook webhook)
+    {
+        try
+        {
+            var resource = System.Text.Json.JsonSerializer.Deserialize<FlexHandshakeNotification>(webhook.Payload)?.Resource;
+
+            if (!string.IsNullOrWhiteSpace(resource) && resource.TrimStart('/').StartsWith("flex/", StringComparison.OrdinalIgnoreCase))
+                return resource.TrimStart('/');
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            // Payload ilegível: cai no endpoint de envio comum.
+        }
+
+        return $"shipments/{webhook.ShipmentId}";
+    }
+
+    // Retorna o corpo da resposta, ou null se o Mercado Livre recusar/falhar.
+    private async Task<string?> GetRawAsync(int userId, string endpoint)
+    {
+        using var response = await OpenClientAsync(userId, HttpMethod.Get, endpoint);
 
         if (response == null)
-            return CustomResponse<string>.Fail("Integração com o Mercado Livre não encontrada ou expirada.");
+            return null;
 
         if (!response.IsSuccessStatusCode)
         {
-            var errorContent = await response.Content.ReadAsStringAsync();
-            _logger.LogError("Erro ao consultar envios ativos do Mercado Livre: {ErrorContent}", errorContent);
-            return CustomResponse<string>.Fail("Erro ao consultar envios ativos no Mercado Livre.");
+            _logger.LogError("Erro ao consultar {Endpoint} no Mercado Livre ({Status}): {ErrorContent}",
+                endpoint, (int)response.StatusCode, await response.Content.ReadAsStringAsync());
+            return null;
         }
 
-        var activeShipments = await response.Content.ReadAsStringAsync();
-
-        return CustomResponse<string>.SuccessTrade(activeShipments);
+        return await response.Content.ReadAsStringAsync();
     }
 }

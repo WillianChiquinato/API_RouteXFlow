@@ -11,5 +11,5 @@ public interface IOAuthIntegrationService
     Task<string?> CreateStateAsync(string provider, int userId, TimeSpan lifetime, string? codeVerifier = null);
     Task<OAuthState?> ConsumeStateAsync(string state, string provider);
     Task<bool> SaveShipmentWebhookAsync(ShipmentWebhookDTO webhook);
-    Task<ShipmentWebhook?> GetShipmentIntegrationAsync(int userId);
+    Task<ShipmentWebhook?> GetShipmentIntegrationAsync(long externalUserId);
 }

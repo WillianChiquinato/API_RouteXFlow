@@ -116,11 +116,11 @@ public class OAuthIntegrationService : IOAuthIntegrationService
         }
     }
 
-    public async Task<ShipmentWebhook?> GetShipmentIntegrationAsync(int userId)
+    public async Task<ShipmentWebhook?> GetShipmentIntegrationAsync(long externalUserId)
     {
         try
         {
-            return await _oAuthIntegrationRepository.GetShipmentIntegrationAsync(userId);
+            return await _oAuthIntegrationRepository.GetShipmentIntegrationAsync(externalUserId);
         }
         catch (Exception ex)
         {
