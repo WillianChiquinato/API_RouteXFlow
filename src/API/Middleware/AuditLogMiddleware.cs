@@ -134,6 +134,7 @@ public class AuditLogMiddleware
         return context.WebSockets.IsWebSocketRequest
             || HttpMethods.IsOptions(context.Request.Method)
             || path == "/"
+            || path == "/health"
             || path.StartsWithSegments("/api/audit", StringComparison.OrdinalIgnoreCase)
             || path.StartsWithSegments("/swagger", StringComparison.OrdinalIgnoreCase);
     }
