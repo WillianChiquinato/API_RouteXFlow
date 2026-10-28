@@ -1,8 +1,10 @@
 using API_RouteXFlow.Domain.Data.Entities;
+using API_RouteXFlow.Emails;
 using API_RouteXFlow.Interfaces.Repository;
 using API_RouteXFlow.Interfaces.Services;
 using API_RouteXFlow.Responses;
 using Application.DTO;
+using Application.DTO.Responses;
 using Domain.Persistence;
 using Microsoft.Extensions.Logging;
 
@@ -13,13 +15,15 @@ public class UserService : IUserService
     private readonly IUserRepository _userRepository;
     private readonly IAppRepository _appRepository;
     private readonly IEmailVerificationService _emailVerificationService;
+    private readonly IEmailService _emailService;
     private readonly ILogger<UserService> _logger;
 
-    public UserService(IUserRepository userRepository, IAppRepository appRepository, IEmailVerificationService emailVerificationService, ILogger<UserService> logger)
+    public UserService(IUserRepository userRepository, IAppRepository appRepository, IEmailVerificationService emailVerificationService, IEmailService emailService, ILogger<UserService> logger)
     {
         _userRepository = userRepository;
         _appRepository = appRepository;
         _emailVerificationService = emailVerificationService;
+        _emailService = emailService;
         _logger = logger;
     }
 
@@ -205,6 +209,107 @@ public class UserService : IUserService
         {
             _logger.LogError(e, "Erro ao obter perfil do usuário {UserId}", userId);
             throw;
+        }
+    }
+
+    private const string RootOnly = "Acesso restrito ao perfil Super-Admin.";
+    private const int MaxRejectionReasonLength = 500;
+
+    public async Task<CustomResponse<List<PendingUserResponse>>> GetPendingUsersAsync(int requesterId)
+    {
+        try
+        {
+            if (!await _userRepository.IsRootAsync(requesterId))
+                return CustomResponse<List<PendingUserResponse>>.Fail(RootOnly);
+
+            var pending = await _userRepository.GetPendingUsersAsync();
+            return CustomResponse<List<PendingUserResponse>>.SuccessTrade(pending, pending.Count);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Erro ao listar cadastros pendentes");
+            throw;
+        }
+    }
+
+    public async Task<CustomResponse<bool>> MarkAuthorizedAccountAsync(int requesterId, int indicatedUserId)
+    {
+        try
+        {
+            if (!await _userRepository.IsRootAsync(requesterId))
+                return CustomResponse<bool>.Fail(RootOnly);
+
+            var user = await _userRepository.GetUserByIdAsync(indicatedUserId);
+            if (user is null)
+                return CustomResponse<bool>.Fail("Usuário não encontrado.");
+
+            if (!await _userRepository.MarkAuthorizedAccountAsync(indicatedUserId))
+                return CustomResponse<bool>.Fail("Não foi possível autorizar a conta.");
+
+            await NotifyReviewAsync(user, "Seu cadastro foi aprovado", "AccountApproved", new Dictionary<string, string>());
+
+            return CustomResponse<bool>.SuccessTrade(true);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Erro ao autorizar conta {IndicatedUserId}", indicatedUserId);
+            throw;
+        }
+    }
+
+    public async Task<CustomResponse<bool>> RejectAccountAsync(int requesterId, int indicatedUserId, string reason)
+    {
+        try
+        {
+            if (!await _userRepository.IsRootAsync(requesterId))
+                return CustomResponse<bool>.Fail(RootOnly);
+
+            reason = reason?.Trim() ?? string.Empty;
+            if (reason.Length > MaxRejectionReasonLength)
+                return CustomResponse<bool>.Fail($"O motivo deve ter até {MaxRejectionReasonLength} caracteres.");
+
+            var user = await _userRepository.GetUserByIdAsync(indicatedUserId);
+            if (user is null)
+                return CustomResponse<bool>.Fail("Usuário não encontrado.");
+
+            if (!await _userRepository.RejectAccountAsync(indicatedUserId, reason.Length == 0 ? null : reason))
+                return CustomResponse<bool>.Fail("Não foi possível recusar a conta.");
+
+            await NotifyReviewAsync(user, "Seu cadastro não foi aprovado", "AccountRejected", new Dictionary<string, string>
+            {
+                ["Reason"] = reason.Length == 0 ? "Nenhum motivo foi informado." : reason
+            });
+
+            return CustomResponse<bool>.SuccessTrade(true);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Erro ao recusar conta {IndicatedUserId}", indicatedUserId);
+            throw;
+        }
+    }
+
+    // A decisão já foi gravada: falha no envio do e-mail não deve desfazê-la.
+    private async Task NotifyReviewAsync(User user, string subject, string template, Dictionary<string, string> extra)
+    {
+        try
+        {
+            extra["UserName"] = user.Username;
+            extra["Year"] = DateTime.UtcNow.Year.ToString();
+
+            var sent = await _emailService.SendEmailAsync(new EmailRequest
+            {
+                To = user.Email,
+                Subject = subject,
+                Body = EmailTemplate.Render(template, extra)
+            });
+
+            if (!sent.Success)
+                _logger.LogWarning("Não foi possível enviar o e-mail de {Template} ao usuário {UserId}", template, user.Id);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Erro ao enviar o e-mail de {Template} ao usuário {UserId}", template, user.Id);
         }
     }
 }

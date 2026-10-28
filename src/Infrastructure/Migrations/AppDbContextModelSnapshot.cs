@@ -1426,6 +1426,18 @@ namespace Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("account_type");
 
+                    b.Property<bool>("AuthorizationAccountVerify")
+                        .HasColumnType("boolean")
+                        .HasColumnName("authorization_account_verify");
+
+                    b.Property<DateTime?>("AuthorizationRejectedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("authorization_rejected_at");
+
+                    b.Property<string>("AuthorizationRejectionReason")
+                        .HasColumnType("text")
+                        .HasColumnName("authorization_rejection_reason");
+
                     b.Property<string>("Cpf")
                         .IsRequired()
                         .HasColumnType("text")
@@ -1443,6 +1455,10 @@ namespace Infrastructure.Migrations
                     b.Property<bool>("EmailVerified")
                         .HasColumnType("boolean")
                         .HasColumnName("email_verified");
+
+                    b.Property<DateTime?>("EmailVerifiedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("email_verified_at");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()

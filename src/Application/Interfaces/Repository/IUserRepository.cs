@@ -1,4 +1,5 @@
 using API_RouteXFlow.Domain.Data.Entities;
+using Application.DTO.Responses;
 
 namespace API_RouteXFlow.Interfaces.Repository;
 
@@ -20,5 +21,9 @@ public interface IUserRepository
     Task<bool> RemoveEmailCodeAsync(EmailCode emailCode);
     Task<bool> RegisterEmailCodeAttemptAsync(EmailCode emailCode);
     Task<bool> MarkEmailVerifiedAsync(int userId);
+    Task<bool> IsRootAsync(int userId);
+    Task<List<PendingUserResponse>> GetPendingUsersAsync();
+    Task<bool> MarkAuthorizedAccountAsync(int userId);
+    Task<bool> RejectAccountAsync(int userId, string? reason);
     Task<ProfilesExternal?> GetProfileUserByIdAsync(int userId);
 }

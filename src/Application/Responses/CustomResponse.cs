@@ -26,4 +26,5 @@ public class CustomResponse<T>
 public static class AuthResultCodes
 {
     public const string EmailNotVerified = "email_not_verified";
+    public const string NotAuthorized = "not_authorize";
 }

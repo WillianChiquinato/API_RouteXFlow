@@ -10,6 +10,11 @@ public class UserRegisterRequest
     public List<int> AppsActives = new List<int>();
 }
 
+public class RejectUserRequest
+{
+    public string Reason { get; set; } = string.Empty;
+}
+
 public class UpdateProfileRequest
 {
     public string Name { get; set; } = string.Empty;

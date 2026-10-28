@@ -97,6 +97,15 @@ public class AuthService : IAuthService
                 return new CustomResponse<string>(false, new List<string> { "Verifique seu e-mail antes de entrar." }, AuthResultCodes.EmailNotVerified);
             }
 
+            if (!user.AuthorizationAccountVerify)
+            {
+                var message = user.AuthorizationRejectedAt is null
+                    ? "Sua conta ainda não foi aprovada pelo administrador, aguarde a avaliação."
+                    : $"Seu cadastro foi recusado. Motivo: {user.AuthorizationRejectionReason}";
+
+                return new CustomResponse<string>(false, new List<string> { message }, AuthResultCodes.NotAuthorized);
+            }
+
             var userComposeDTO = new UserComposeDTO
             {
                 Id = user.Id,

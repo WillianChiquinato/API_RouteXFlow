@@ -1,5 +1,6 @@
 using API_RouteXFlow.Domain.Data.Entities;
 using API_RouteXFlow.Interfaces.Repository;
+using Application.DTO.Responses;
 using Infrastructure.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,6 +8,8 @@ namespace API_RouteXFlow.Repository;
 
 public class UserRepository : IUserRepository
 {
+    private const int SuperAdminRoleId = 999;
+
     private readonly AppDbContext _dbContext;
 
     public UserRepository(AppDbContext dbContext)
@@ -49,6 +52,7 @@ public class UserRepository : IUserRepository
             RoleId = userRegisterRequest.RoleId,
             AccountType = (AccountType)userRegisterRequest.AccountTypeId,
             EmailVerified = false,
+            AuthorizationAccountVerify = false,
             CreatedAt = DateTime.UtcNow,
             Preferences = { new Preferences() }
         };
@@ -194,6 +198,60 @@ public class UserRepository : IUserRepository
             return false;
 
         user.EmailVerified = true;
+        user.EmailVerifiedAt = DateTime.UtcNow;
+        return await _dbContext.SaveChangesAsync() > 0;
+    }
+
+    public Task<bool> IsRootAsync(int userId) =>
+        _dbContext.Users.AsNoTracking().AnyAsync(x => x.Id == userId && x.RoleId == SuperAdminRoleId);
+
+    public async Task<List<PendingUserResponse>> GetPendingUsersAsync()
+    {
+        return await _dbContext.Users
+            .AsNoTracking()
+            .Where(x => !x.AuthorizationAccountVerify && x.AuthorizationRejectedAt == null)
+            .OrderBy(x => x.CreatedAt)
+            .Select(x => new PendingUserResponse
+            {
+                Id = x.Id,
+                Name = x.Username,
+                Email = x.Email,
+                Cpf = x.Cpf,
+                PhoneNumber = x.PhoneNumber,
+                Role = x.Role != null ? x.Role.Name : null,
+                RoleId = x.RoleId,
+                AccountType = x.AccountType,
+                Apps = _dbContext.AppsVinculatedUser
+                    .Where(a => a.UserId == x.Id && a.App != null)
+                    .Select(a => a.App!.Name)
+                    .ToList(),
+                CreatedAt = x.CreatedAt,
+                EmailVerifiedAt = x.EmailVerifiedAt
+            })
+            .ToListAsync();
+    }
+
+    public async Task<bool> MarkAuthorizedAccountAsync(int userId)
+    {
+        var user = await _dbContext.Users.FirstOrDefaultAsync(x => x.Id == userId);
+        if (user == null)
+            return false;
+
+        user.AuthorizationAccountVerify = true;
+        user.AuthorizationRejectedAt = null;
+        user.AuthorizationRejectionReason = null;
+        return await _dbContext.SaveChangesAsync() > 0;
+    }
+
+    public async Task<bool> RejectAccountAsync(int userId, string? reason)
+    {
+        var user = await _dbContext.Users.FirstOrDefaultAsync(x => x.Id == userId);
+        if (user == null)
+            return false;
+
+        user.AuthorizationAccountVerify = false;
+        user.AuthorizationRejectedAt = DateTime.UtcNow;
+        user.AuthorizationRejectionReason = reason;
         return await _dbContext.SaveChangesAsync() > 0;
     }
 

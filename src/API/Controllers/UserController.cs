@@ -71,6 +71,36 @@ public class UserController : ControllerBase
         return response.Success ? Ok(response) : BadRequest(response);
     }
 
+    [HttpGet]
+    [Route("pending")]
+    public async Task<IActionResult> GetPending()
+    {
+        if (!TryGetUserId(out var userId)) return Unauthorized();
+
+        var response = await _userService.GetPendingUsersAsync(userId);
+        return response.Success ? Ok(response) : BadRequest(response);
+    }
+
+    [HttpPost]
+    [Route("{id:int}/approve")]
+    public async Task<IActionResult> Approve(int id)
+    {
+        if (!TryGetUserId(out var userId)) return Unauthorized();
+
+        var response = await _userService.MarkAuthorizedAccountAsync(userId, id);
+        return response.Success ? Ok(response) : BadRequest(response);
+    }
+
+    [HttpPost]
+    [Route("{id:int}/reject")]
+    public async Task<IActionResult> Reject(int id, RejectUserRequest request)
+    {
+        if (!TryGetUserId(out var userId)) return Unauthorized();
+
+        var response = await _userService.RejectAccountAsync(userId, id, request.Reason);
+        return response.Success ? Ok(response) : BadRequest(response);
+    }
+
     private bool TryGetUserId(out int userId)
     {
         var claim = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");

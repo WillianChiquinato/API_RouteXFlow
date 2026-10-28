@@ -36,6 +36,17 @@ public class User : BaseEntity
     [Column("email_verified")]
     public bool EmailVerified { get; set; }
 
+    [Column("email_verified_at")]
+    public DateTime? EmailVerifiedAt { get; set; }
+
+    [Column("authorization_account_verify")]
+    public bool AuthorizationAccountVerify { get; set; }
+
+    [Column("authorization_rejected_at")]
+    public DateTime? AuthorizationRejectedAt { get; set; }
+
+    [Column("authorization_rejection_reason")]
+    public string? AuthorizationRejectionReason { get; set; }
 
     [Column("role_id")]
     public int RoleId { get; set; }
