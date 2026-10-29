@@ -1,0 +1,37 @@
+
+discovery.docker "local" {
+  host = "unix:///var/run/docker.sock"
+}
+
+discovery.relabel "selected" {
+  targets = discovery.docker.local.targets
+
+  // Mantém apenas containers cujo nome contém
+  // "api" ou "postgres", ignorando maiúsculas/minúsculas.
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "(?i)/.*(api|postgres).*"
+    action        = "keep"
+  }
+
+  // Adiciona o nome do container como label pesquisável.
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+    replacement   = "$1"
+  }
+}
+
+loki.source.docker "selected" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.relabel.selected.output
+  labels     = { job = "docker" }
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
